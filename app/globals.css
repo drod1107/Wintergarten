@@ -90,10 +90,14 @@ p:last-child{margin-bottom:0;}
   display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
 }
 .site-nav .brand{
-  font-family:var(--font-display), sans-serif;font-weight:700;text-transform:uppercase;
-  font-size:20px;text-decoration:none;letter-spacing:-.01em;
+  display:flex;flex-direction:column;gap:2px;text-decoration:none;
 }
-.site-nav .brand em{font-style:normal;color:var(--rust);}
+.site-nav .brand-mark{
+  font-family:var(--font-display), sans-serif;font-weight:700;text-transform:uppercase;
+  font-size:20px;letter-spacing:-.01em;
+}
+.site-nav .brand-mark em{font-style:normal;color:var(--rust);}
+.site-nav .brand-tagline{color:var(--rust);}
 .nav-links{display:flex;flex-wrap:wrap;gap:4px 18px;list-style:none;margin:0;padding:0;}
 .nav-links a{
   text-decoration:none;font-family:var(--font-display), sans-serif;font-weight:600;
@@ -118,6 +122,10 @@ h1.big{
 }
 h1.big .split{display:block;}
 h1.big .split:last-child{margin-left:14%;color:var(--forest);}
+.full-name{
+  margin:6px 0 0 14%;font-family:var(--font-display), sans-serif;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;font-size:clamp(14px,3.2vw,20px);color:var(--rust);
+}
 .strapline{
   margin:16px 0 0 auto;max-width:30ch;text-align:right;
   font-size:14px;line-height:1.45;

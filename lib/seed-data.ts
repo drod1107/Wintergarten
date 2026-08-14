@@ -193,7 +193,7 @@ export const SEED_KITCHEN_RECORD: KitchenRecordContent = {
   ],
   eggsStatement: {
     text:
-      'Real eggs are used deliberately and heavily — they are the technical foundation of this bakery. Whipped-egg structures like angel food, chiffon and meringue cannot be made vegan, and most gluten-free bakeries make them badly. This is not a vegan bakery.',
+      'Real eggs are used deliberately and heavily — they are the technical foundation of this bakery. Whipped-egg structures like angel food, chiffon and meringue depend on real egg whites to hold their shape; there is no vegan substitute that does the same job, and gluten normally helps a batter hold together, so gluten-free baking without it takes real technique to get right. This is not a vegan bakery.',
     placeholder: false,
   },
   presentAllergens: {
