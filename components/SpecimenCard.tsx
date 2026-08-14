@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
 import { specimenIcon } from './specimen-icons';
+import { stockPhotoFor } from '@/lib/stock-photos';
 
 function formatPrice(cents: number, note: string) {
   const dollars = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
@@ -20,6 +21,7 @@ export default function SpecimenCard({
 }) {
   const isOccasion = product.type === 'occasion';
   const soldOut = product.capacity !== null && product.orderedCount >= product.capacity;
+  const photo = stockPhotoFor(product.imageNote);
 
   return (
     <article className={`plate${isOccasion ? ' occasion' : ''}${soldOut ? ' sold-out' : ''}`}>
@@ -28,7 +30,11 @@ export default function SpecimenCard({
         <span>{product.specs[2]?.value || product.specs[0]?.value || ''}</span>
       </div>
       <div className="frame">
-        {specimenIcon(product.imageNote, isOccasion)}
+        {photo ? (
+          <img src={photo.url} alt={`${product.name}, ${product.subtitle}`} loading="lazy" decoding="async" />
+        ) : (
+          specimenIcon(product.imageNote, isOccasion)
+        )}
         <span className="det">{determination}</span>
       </div>
       {soldOut && <span className="badge">Sold out this window</span>}
