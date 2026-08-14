@@ -42,6 +42,7 @@ export default async function HomePage() {
               <span className="split">Winter</span>
               <span className="split">garten</span>
             </h1>
+            <p className="full-name">Bakehouse + Botanicals</p>
 
             <p className="strapline">
               A small bakery and a small collection of plants, kept under one roof on Highway H.

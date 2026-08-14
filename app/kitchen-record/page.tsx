@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { getKitchenRecord, getProducts } from '@/lib/store';
-import { SITE_URL } from '@/lib/site';
+import { SITE_URL, SITE_NAME } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Kitchen Record',
@@ -11,14 +11,14 @@ export const metadata: Metadata = {
     "What's never in this building — gluten, mammal-derived ingredients, artificial colour and flavour — plus every ingredient, allergen and cross-contact detail, ingredient by ingredient. Missouri cottage food law RSMo 196.298.",
   alternates: { canonical: `${SITE_URL}/kitchen-record` },
   openGraph: {
-    title: 'Wintergarten — Kitchen Record',
+    title: `${SITE_NAME} — Kitchen Record`,
     description: "What's never in this building, and the full ingredient list for every product.",
     url: `${SITE_URL}/kitchen-record`,
     type: 'article',
   },
   twitter: {
     card: 'summary',
-    title: 'Wintergarten — Kitchen Record',
+    title: `${SITE_NAME} — Kitchen Record`,
     description: "What's never in this building, and the full ingredient list for every product.",
   },
 };

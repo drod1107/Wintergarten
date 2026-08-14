@@ -11,7 +11,10 @@ export default function Nav({ current }: { current?: string }) {
   return (
     <nav className="site-nav z" aria-label="Primary">
       <Link href="/" className="brand">
-        Winter<em>garten</em>
+        <span className="brand-mark">
+          Winter<em>garten</em>
+        </span>
+        <span className="brand-tagline typed">Bakehouse + Botanicals</span>
       </Link>
       <ul className="nav-links">
         {LINKS.map((l) => (
