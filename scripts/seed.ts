@@ -32,8 +32,8 @@ async function main() {
   console.log('Seeding products...');
   for (const p of SEED_PRODUCTS) {
     await pool.query(
-      `insert into products (id, type, name, subtitle, specs, price_cents, price_note, ships, capacity, ordered_count, active, sort_order, image_note, ingredients, allergens)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+      `insert into products (id, type, name, subtitle, specs, price_cents, price_note, price_pending, ships, capacity, ordered_count, active, sort_order, image_note, ingredients, allergens)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
        on conflict (id) do nothing`,
       [
         p.id,
@@ -43,6 +43,7 @@ async function main() {
         JSON.stringify(p.specs),
         p.priceCents,
         p.priceNote,
+        p.pricePending,
         p.ships,
         p.capacity,
         p.orderedCount,
@@ -86,11 +87,18 @@ async function main() {
   console.log('Seeding care guides...');
   for (const g of SEED_CARE_GUIDES) {
     await pool.query(
-      `insert into care_guides (slug, title, plant_accession, dek, body, published)
-       values ($1,$2,$3,$4,$5,$6) on conflict (slug) do nothing`,
-      [g.slug, g.title, g.plantAccession, g.dek, g.body, g.published]
+      `insert into care_guides (slug, title, plant_accession, dek, body, published, sort_order)
+       values ($1,$2,$3,$4,$5,$6,$7) on conflict (slug) do nothing`,
+      [g.slug, g.title, g.plantAccession, g.dek, g.body, g.published, g.sortOrder]
     );
   }
+
+  // Products the owner has withdrawn. Seeding runs against databases that may
+  // already carry them, so retire them explicitly rather than leaving them
+  // live from an earlier seed.
+  const retired = ['WG·B·003', 'WG·P·002'];
+  const { rowCount } = await pool.query('delete from products where id = any($1)', [retired]);
+  if (rowCount) console.log(`Removed ${rowCount} withdrawn product(s).`);
 
   console.log('Done.');
   await pool.end();

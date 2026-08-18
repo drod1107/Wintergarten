@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import ProseBody from '@/components/ProseBody';
 import { getStory } from '@/lib/store';
 import { SITE_URL } from '@/lib/site';
 
@@ -33,9 +34,7 @@ export default async function StoryPage() {
             </div>
           ) : (
             <div className="prose">
-              {story.split('\n\n').map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
+              <ProseBody text={story} />
             </div>
           )}
         </div>

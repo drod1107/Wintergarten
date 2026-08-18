@@ -27,6 +27,13 @@ export function isDemoMode(): boolean {
   return !hasDatabase();
 }
 
+// Reservat items are arranged by conversation, not bought from a cart, and an
+// item whose price the owner hasn't set yet can't be charged for at all. Both
+// are still listed on the site — they're just not add-to-cart.
+export function isOrderable(p: Product): boolean {
+  return p.type !== 'reservat' && !p.pricePending;
+}
+
 function rowToProduct(r: any): Product {
   return {
     id: r.id,
@@ -36,6 +43,7 @@ function rowToProduct(r: any): Product {
     specs: r.specs,
     priceCents: r.price_cents,
     priceNote: r.price_note,
+    pricePending: r.price_pending,
     ships: r.ships,
     capacity: r.capacity,
     orderedCount: r.ordered_count,
@@ -72,12 +80,12 @@ export async function upsertProduct(p: Product): Promise<void> {
   const pool = getPool();
   if (!pool) return; // demo mode: accepted, not persisted
   await pool.query(
-    `insert into products (id, type, name, subtitle, specs, price_cents, price_note, ships, capacity, ordered_count, active, sort_order, image_note, ingredients, allergens, updated_at)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, now())
+    `insert into products (id, type, name, subtitle, specs, price_cents, price_note, price_pending, ships, capacity, ordered_count, active, sort_order, image_note, ingredients, allergens, updated_at)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, now())
      on conflict (id) do update set
-       type=$2, name=$3, subtitle=$4, specs=$5, price_cents=$6, price_note=$7, ships=$8,
-       capacity=$9, ordered_count=$10, active=$11, sort_order=$12, image_note=$13,
-       ingredients=$14, allergens=$15, updated_at=now()`,
+       type=$2, name=$3, subtitle=$4, specs=$5, price_cents=$6, price_note=$7, price_pending=$8,
+       ships=$9, capacity=$10, ordered_count=$11, active=$12, sort_order=$13, image_note=$14,
+       ingredients=$15, allergens=$16, updated_at=now()`,
     [
       p.id,
       p.type,
@@ -86,6 +94,7 @@ export async function upsertProduct(p: Product): Promise<void> {
       JSON.stringify(p.specs),
       p.priceCents,
       p.priceNote,
+      p.pricePending,
       p.ships,
       p.capacity,
       p.orderedCount,
@@ -147,7 +156,7 @@ export async function getEffectiveWindowState(): Promise<EffectiveWindowState> {
     return { state: 'closed', reason: 'time-passed', notes: window.notes };
   }
   const products = await getProducts();
-  const orderable = products.filter((p) => p.type !== 'occasion');
+  const orderable = products.filter((p) => isOrderable(p));
   const soldOut =
     orderable.length > 0 &&
     orderable.every((p) => p.capacity !== null && p.orderedCount >= p.capacity);
@@ -237,6 +246,7 @@ function rowToCareGuide(r: any): CareGuide {
     dek: r.dek,
     body: r.body,
     published: r.published,
+    sortOrder: r.sort_order,
     createdAt: new Date(r.created_at).toISOString(),
     updatedAt: new Date(r.updated_at).toISOString(),
   };
@@ -255,8 +265,8 @@ export async function getCareGuides(opts: { includeUnpublished?: boolean } = {})
   }
   const { rows } = await pool.query(
     opts.includeUnpublished
-      ? 'select * from care_guides order by created_at desc'
-      : 'select * from care_guides where published = true order by created_at desc'
+      ? 'select * from care_guides order by sort_order asc, created_at asc'
+      : 'select * from care_guides where published = true order by sort_order asc, created_at asc'
   );
   return rows.map(rowToCareGuide);
 }
@@ -272,10 +282,10 @@ export async function upsertCareGuide(g: Omit<CareGuide, 'createdAt' | 'updatedA
   const pool = getPool();
   if (!pool) return;
   await pool.query(
-    `insert into care_guides (slug, title, plant_accession, dek, body, published, updated_at)
-     values ($1,$2,$3,$4,$5,$6, now())
-     on conflict (slug) do update set title=$2, plant_accession=$3, dek=$4, body=$5, published=$6, updated_at=now()`,
-    [g.slug, g.title, g.plantAccession, g.dek, g.body, g.published]
+    `insert into care_guides (slug, title, plant_accession, dek, body, published, sort_order, updated_at)
+     values ($1,$2,$3,$4,$5,$6,$7, now())
+     on conflict (slug) do update set title=$2, plant_accession=$3, dek=$4, body=$5, published=$6, sort_order=$7, updated_at=now()`,
+    [g.slug, g.title, g.plantAccession, g.dek, g.body, g.published, g.sortOrder]
   );
 }
 
@@ -371,12 +381,17 @@ export async function setOrderStripeSession(id: number, sessionId: string): Prom
   await pool.query('update orders set stripe_session_id = $1 where id = $2', [sessionId, id]);
 }
 
-export async function markOrderPaid(sessionId: string): Promise<void> {
+// Returns the order that was marked paid, so callers can forward it onward
+// without a second round trip. Null in demo mode, or if the session id
+// matches no order.
+export async function markOrderPaid(sessionId: string): Promise<OrderRecord | null> {
   const pool = getPool();
-  if (!pool) return;
-  await pool.query("update orders set stripe_status = 'paid' where stripe_session_id = $1", [
-    sessionId,
-  ]);
+  if (!pool) return null;
+  const { rows } = await pool.query(
+    "update orders set stripe_status = 'paid', updated_at = now() where stripe_session_id = $1 returning *",
+    [sessionId]
+  );
+  return rows[0] ? rowToOrder(rows[0]) : null;
 }
 
 export async function getOrders(): Promise<OrderRecord[]> {

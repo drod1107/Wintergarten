@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (!slug || !body.title) {
     return NextResponse.json({ error: 'Title and slug are required.' }, { status: 400 });
   }
-  await upsertCareGuide({ ...body, slug });
+  await upsertCareGuide({ ...body, slug, sortOrder: Number(body.sortOrder) || 0 });
   return NextResponse.json({ ok: true, slug });
 }
 

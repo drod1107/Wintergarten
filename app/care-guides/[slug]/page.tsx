@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
+import ProseBody from '@/components/ProseBody';
 import { getCareGuide, getCareGuides, getProduct } from '@/lib/store';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 
@@ -73,12 +74,7 @@ export default async function CareGuidePage({ params }: { params: Promise<{ slug
           </header>
 
           <article className="prose">
-            {body
-              .trim()
-              .split('\n\n')
-              .map((para, i) => (
-                <p key={i}>{para}</p>
-              ))}
+            <ProseBody text={body} />
           </article>
 
           {relatedProduct && (

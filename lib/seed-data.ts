@@ -1,9 +1,16 @@
 import type { CareGuide, KitchenRecordContent, OrderWindow, Product, StandStatus } from './types';
 
-// Fallback content used when DATABASE_URL is not set, and the initial
-// state loaded into Postgres by scripts/seed.ts otherwise. Bakery/plant
-// copy follows the tone the approved mockup demonstrated; prices, yields
-// and final descriptions are the owner's to correct via /admin.
+// Fallback content used when DATABASE_URL is not set, and the initial state
+// loaded into Postgres by scripts/seed.ts otherwise.
+//
+// Product copy here is the owner's supplied catalog. Where the owner marked a
+// price or an ingredient list as still to come, the field is left empty and
+// flagged rather than filled with a guess — the site shows a visible
+// "coming soon" in its place.
+//
+// Accession numbers are never reissued: WG·B·003 and WG·P·002 were retired
+// with the Angel Food Cupcake and the Swiss Cheese Monstera, so the sequence
+// skips them.
 
 export const SEED_PRODUCTS: Product[] = [
   {
@@ -14,19 +21,21 @@ export const SEED_PRODUCTS: Product[] = [
     specs: [
       { label: 'Eats like', value: "The pan your grandmother didn't cut evenly." },
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
-      { label: 'Cut', value: '9×13, cut 3×4' },
+      { label: 'Cut', value: '9×13, cut 3×4 — 24 per batch' },
       { label: 'Keeps', value: '4 days, sealed' },
     ],
     priceCents: 400,
     priceNote: '· $22 half dozen',
+    pricePending: false,
     ships: true,
     capacity: 40,
     orderedCount: 0,
     active: true,
     sortOrder: 1,
     imageNote: 'brownie',
-    ingredients: '',
-    allergens: 'tree nuts (walnuts, optional add-in)',
+    ingredients:
+      'Gluten-free flour blend, sugar, semi-sweet chocolate chips, cocoa powder, plant-based butter, eggs, vanilla extract, baking powder, sea salt',
+    allergens: '',
   },
   {
     id: 'WG·B·002',
@@ -41,56 +50,102 @@ export const SEED_PRODUCTS: Product[] = [
     ],
     priceCents: 200,
     priceNote: '· $20 dozen',
+    pricePending: false,
     ships: true,
     capacity: 60,
     orderedCount: 0,
     active: true,
     sortOrder: 2,
     imageNote: 'snickerdoodle',
-    ingredients: '',
+    ingredients:
+      'Gluten-free flour blend, sugar, plant-based butter, eggs, vanilla extract, baking powder, cinnamon, sea salt',
     allergens: '',
   },
   {
-    id: 'WG·B·003',
+    id: 'WG·B·004',
     type: 'bakery',
-    name: 'Angel Food Cupcake',
-    subtitle: 'lemon curd, torched meringue',
+    name: 'Iced Lemon Loaf',
+    subtitle: 'iced, and sliced thick',
     specs: [
-      { label: 'Eats like', value: 'Lemon meringue pie that learned to stand up.' },
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
-      { label: 'Yield', value: '6 whites · 6 yolks per batch' },
-      { label: 'Keeps', value: 'Best within 2 days — meringue is torched to order' },
+      { label: 'Format', value: '9×5 loaf' },
+      { label: 'Sold as', value: 'By the slice, or whole and frozen' },
     ],
-    priceCents: 500,
-    priceNote: '· $54 dozen',
-    ships: false,
+    priceCents: 425,
+    priceNote: '/slice · $15–22 whole (frozen)',
+    pricePending: false,
+    ships: true,
     capacity: 24,
     orderedCount: 0,
     active: true,
     sortOrder: 3,
-    imageNote: 'angel-food-cupcake',
+    imageNote: 'iced-lemon-loaf',
     ingredients: '',
-    allergens: 'coconut (in curd garnish)',
+    allergens: '',
+  },
+  {
+    id: 'WG·B·005',
+    type: 'bakery',
+    name: 'Pumpkin Loaf',
+    subtitle: 'a seasonal loaf',
+    specs: [
+      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Format', value: '9×5 loaf' },
+    ],
+    priceCents: 0,
+    priceNote: '',
+    pricePending: true,
+    ships: true,
+    capacity: 24,
+    orderedCount: 0,
+    active: true,
+    sortOrder: 4,
+    imageNote: 'pumpkin-loaf',
+    ingredients: '',
+    allergens: '',
   },
   {
     id: 'WG·O·001',
-    type: 'occasion',
+    type: 'reservat',
     name: 'Der Smoking',
     subtitle: 'black and white, boxed and tied',
     specs: [
-      { label: 'Eats like', value: 'The reason the rest of the table goes quiet.' },
       { label: 'Comes in', value: 'Rigid box, magnetic closure, hand tied' },
-      { label: 'Notice', value: 'One week' },
+      { label: 'Notice', value: "One week" },
+      { label: 'Sold as', value: 'By order only' },
     ],
     priceCents: 4600,
-    priceNote: '· by order',
+    priceNote: '· by order only',
+    pricePending: false,
     ships: false,
     capacity: 8,
     orderedCount: 0,
     active: true,
-    sortOrder: 4,
-    imageNote: 'occasion-box',
+    sortOrder: 5,
+    imageNote: 'der-smoking',
     ingredients: '',
+    allergens: '',
+  },
+  {
+    id: 'WG·O·002',
+    type: 'reservat',
+    name: 'Occasion Cakes',
+    subtitle: 'custom, to order',
+    specs: [
+      { label: 'Comes in', value: 'Made to the occasion' },
+      { label: 'Notice', value: 'One week minimum' },
+      { label: 'Sold as', value: 'By order only' },
+    ],
+    priceCents: 4500,
+    priceNote: 'to $72, depending on size and flavour',
+    pricePending: false,
+    ships: false,
+    capacity: 4,
+    orderedCount: 0,
+    active: true,
+    sortOrder: 6,
+    imageNote: 'occasion-cake',
+    ingredients: 'Varies by order',
     allergens: '',
   },
   {
@@ -102,38 +157,38 @@ export const SEED_PRODUCTS: Product[] = [
       { label: 'Light', value: 'Bright indirect; forgives a dim corner' },
       { label: 'Water', value: 'When the top two inches go dry' },
       { label: 'Pot size', value: '4 in' },
-      { label: 'Habit', value: 'Trailing or climbing on a pole' },
     ],
     priceCents: 1200,
     priceNote: '',
+    pricePending: false,
     ships: true,
     capacity: 20,
     orderedCount: 0,
     active: true,
-    sortOrder: 5,
+    sortOrder: 7,
     imageNote: 'pothos',
     ingredients: '',
     allergens: '',
   },
   {
-    id: 'WG·P·002',
+    id: 'WG·P·004',
     type: 'plant',
-    name: 'Swiss Cheese Monstera',
-    subtitle: 'Monstera adansonii',
+    name: 'Philodendron',
+    subtitle: 'Philodendron hederaceum',
     specs: [
-      { label: 'Light', value: 'Bright indirect; holes come with age and light' },
-      { label: 'Water', value: 'Weekly, less in winter' },
-      { label: 'Pot size', value: '6 in' },
-      { label: 'Habit', value: 'Wants a pole' },
+      { label: 'Light', value: 'Bright indirect; tolerates lower light than most aroids' },
+      { label: 'Water', value: 'When the top inch goes dry' },
+      { label: 'Pot size', value: 'Coming soon' },
     ],
-    priceCents: 1800,
+    priceCents: 0,
     priceNote: '',
+    pricePending: true,
     ships: true,
-    capacity: 15,
+    capacity: 20,
     orderedCount: 0,
     active: true,
-    sortOrder: 6,
-    imageNote: 'monstera',
+    sortOrder: 8,
+    imageNote: 'philodendron',
     ingredients: '',
     allergens: '',
   },
@@ -146,15 +201,15 @@ export const SEED_PRODUCTS: Product[] = [
       { label: 'Light', value: 'Anything short of a closet' },
       { label: 'Water', value: 'Monthly. Truly.' },
       { label: 'Pot size', value: '4 in' },
-      { label: 'Habit', value: 'Upright, glossy, slow' },
     ],
     priceCents: 1600,
     priceNote: '',
+    pricePending: false,
     ships: true,
     capacity: 20,
     orderedCount: 0,
     active: true,
-    sortOrder: 7,
+    sortOrder: 9,
     imageNote: 'zz-plant',
     ingredients: '',
     allergens: '',
@@ -173,7 +228,7 @@ export const SEED_STAND_STATUS: StandStatus = {
   isOpen: false,
   hours: 'Saturdays, eight until one, or until the table is empty.',
   address: '5312 Highway H, Sullivan, MO 63080',
-  todayText: 'brownies · snickerdoodles · pothos · a few monstera',
+  todayText: 'brownies · snickerdoodles · pothos · philodendron',
   updatedAt: new Date().toISOString(),
   hoursDayOfWeek: 'Saturday',
   hoursOpensTime: '08:00',
@@ -185,7 +240,7 @@ export const SEED_KITCHEN_RECORD: KitchenRecordContent = {
     { label: 'Gluten', detail: 'Never on the premises.', placeholder: false },
     {
       label: 'Mammal',
-      detail: 'No dairy, butter, gelatin, tallow, lard, rendered animal fat, carmine, whey or casein.',
+      detail: 'No dairy, gelatin, tallow, or rendered fat of any kind, ever.',
       placeholder: false,
     },
     { label: 'Artificial colour', detail: 'Never used.', placeholder: false },
@@ -200,53 +255,65 @@ export const SEED_KITCHEN_RECORD: KitchenRecordContent = {
     text: '[Owner to supply: which items contain tree nuts, coconut or soy, and how each is labelled.]',
     placeholder: true,
   },
+  // Supplied by the owner in kitchen-record.md. This is the complete
+  // statement — nothing is to be added to it.
   crossContact: {
-    text: '[Owner to supply: the kitchen’s specific cross-contact protocol — equipment, surfaces, storage, and staff practice.]',
-    placeholder: true,
+    text:
+      'All products are gluten-free. The kitchen is completely mammal-free — no dairy, gelatin, tallow, or rendered fat of any kind, ever.',
+    placeholder: false,
   },
   legalBasis: {
     text: 'This bakery operates under Missouri cottage food law, RSMo 196.298.',
     placeholder: false,
   },
   ingredientsIntro: {
-    text: '[Owner to supply: the full ingredient list for every product, ingredient by ingredient.]',
+    text: '[Owner to supply: the remaining ingredient lists, ingredient by ingredient.]',
     placeholder: true,
   },
 };
 
-export const SEED_STORY = `[Owner to supply: the story of why Wintergarten exists — a household with alpha-gal syndrome, and a bakery built so the food is safe at home first. This page intentionally ships empty rather than with invented biography.]`;
+// The owner's own words, supplied in story.md and used verbatim. Lines
+// beginning with '## ' render as section headings; everything else is a
+// paragraph. Editable through /admin without losing that structure.
+export const SEED_STORY = `## The name
 
-// Care guides: genuine, general horticultural information — not
-// business-specific claims, so it's safe to draft ahead of the owner's
-// review. Each is flagged as a draft in its own metadata so nobody
-// mistakes it for the owner's voice.
+Wintergarten is German for conservatory — a winter garden, a room where living things are kept warm when the world outside goes cold. The word is personal. My family is German. My ancestors were shopkeepers in rural Missouri in the 1850s, part of a wave of German immigrants who built small businesses up and down this corridor. The name connects this place to that history, and to the communities they were part of.
+
+## Why plants
+
+Houseplants saved my life — or at least the version of it I wanted to live. I spent years struggling with my mental health, and somewhere in that time I found that caring for plants pulled me out of my own head. It made me present. It gave me something outside myself to pay attention to, something that needed me and responded when I showed up. It taught me gratitude in a way nothing else had. I want that for other people. Every plant that leaves here has already been rooted and cared for. It is ready to grow.
+
+## Why baking
+
+Necessity, then obsession. I have always loved extraordinary bakeries — in every city I visit, I find the most highly rated pâtissier and go. A macaron, a tart, whatever they are known for. That is who I am.
+
+Then my family's allergies changed what we could eat. Dairy and gluten were out, which meant the only option in most public spaces was vegan baked goods. I hate vegan baked goods. Every one I have ever had was gummy or dry or crumbly or wrong in some fundamental way — missing the thing that makes a baked good worth eating. I say that carefully, because I have no quarrel with veganism. But a vegan brownie has never once done what a brownie is supposed to do.
+
+The thing that was destroying the texture, I eventually understood, was the absence of eggs. Neither my family nor I are allergic to eggs. That single fact changed everything.
+
+I got serious about baking during the pandemic — the Great British Bake Off was the spark — and I fell in love with it almost immediately, because I discovered that eggs rescue gluten-free baking in ways nothing else can. They restore structure. They restore texture. They make things rise and hold and chew the way they are supposed to. The baked goods that came out of my kitchen started reaching a point where people with no allergies at all either couldn't tell or couldn't believe what they were eating. Grown adults, licking their fingers and dabbing up crumbs.
+
+That reaction — the moment someone takes a bite of something they thought they could never have again and just lights up — is why I do this.
+
+## What this is
+
+Food is time travel. A good bite can take you to a moment in childhood, to the day you fell in love, to a city you've never visited. It is one of the few things that is genuinely universal. I have always been passionate about it, but I never found the part of it I wanted to do for a living — until this.
+
+Wintergarten is a bakery and a plant shop, kept under one roof on Highway H outside Sullivan. Everything baked here is gluten-free and mammal-free, made with real eggs, and held to the standard of the best bakeries I have ever visited. Every plant here has been propagated and rooted in this house, and sent out ready to grow.
+
+It is for the people who have been told their options are limited. They are not.`;
+
+// Care guides: general horticultural information, drafted ahead of the
+// owner's review and flagged as such in each body. sortOrder drives the
+// numbering shown on the index.
 export const SEED_CARE_GUIDES: Omit<CareGuide, 'createdAt' | 'updatedAt'>[] = [
-  {
-    slug: 'why-your-monstera-hasnt-split-yet',
-    title: "Why Your Monstera Hasn't Split Yet",
-    plantAccession: 'WG·P·002',
-    dek: 'Fenestration is a light problem before it is an age problem.',
-    published: true,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-A young Monstera adansonii or Monstera deliciosa almost always starts with solid, unsplit leaves. That's normal, not a sign of a sick plant.
-
-Split leaves — fenestration — are a response to two things: maturity and light. A cutting has to grow past its juvenile phase before it can produce fenestrated growth at all, and no amount of fertilizer speeds that up. Most indoor monsteras need several new leaves, sometimes a year or more of growth, before splitting begins.
-
-Light is the lever you actually control. In the wild, monsteras climb toward brighter gaps in the canopy, and splitting is thought to help light reach lower leaves and let wind pass through without tearing the plant apart. Indoors, a monstera kept in low or medium light will often keep producing solid leaves indefinitely, no matter how old it is. Move it somewhere with bright, indirect light — close to an east or west window, or a few feet back from a south-facing one — and new growth usually starts showing splits within a few leaves.
-
-A support pole helps too. Monsteras are vining araceae; a plant allowed to climb tends to mature and fenestrate faster than one left to sprawl.
-
-What won't help: more water, more fertilizer, or repotting. Overwatering in particular just risks root rot while you wait.
-
-If a plant is getting strong indirect light, has something to climb, and is still putting out entirely solid leaves after a year, patience is still the right answer before intervention.`,
-  },
   {
     slug: 'pothos-in-water-pothos-in-soil',
     title: 'Pothos in Water, Pothos in Soil',
     plantAccession: 'WG·P·001',
     dek: 'The same cutting behaves differently depending on where its roots end up.',
     published: true,
+    sortOrder: 1,
     body: `DRAFT — voice not yet reviewed by the owner.
 
 Golden pothos (Epipremnum aureum) is one of the few houseplants that genuinely thrives either way, but water and soil aren't interchangeable mid-life — the plant grows a different kind of root for each.
@@ -265,6 +332,7 @@ If the goal is a bigger, faster-growing plant, soil wins — pothos roots access
     plantAccession: 'WG·P·003',
     dek: 'Most ZZ plant deaths are drownings, not neglect.',
     published: true,
+    sortOrder: 2,
     body: `DRAFT — voice not yet reviewed by the owner.
 
 Zamioculcas zamiifolia stores water in thick, potato-like rhizomes just under the soil line. That single fact explains almost everything about how to keep one alive.
@@ -278,11 +346,33 @@ Light is flexible. ZZ plants tolerate low light better than almost any common ho
 One more thing worth knowing: every part of the plant is mildly toxic if chewed or ingested, which matters if pets or small children are around it.`,
   },
   {
+    slug: 'why-your-monstera-hasnt-split-yet',
+    title: "Why Your Monstera Hasn't Split Yet",
+    plantAccession: '',
+    dek: 'Fenestration is a light problem before it is an age problem.',
+    published: true,
+    sortOrder: 3,
+    body: `DRAFT — voice not yet reviewed by the owner.
+
+A young Monstera adansonii or Monstera deliciosa almost always starts with solid, unsplit leaves. That's normal, not a sign of a sick plant.
+
+Split leaves — fenestration — are a response to two things: maturity and light. A cutting has to grow past its juvenile phase before it can produce fenestrated growth at all, and no amount of fertilizer speeds that up. Most indoor monsteras need several new leaves, sometimes a year or more of growth, before splitting begins.
+
+Light is the lever you actually control. In the wild, monsteras climb toward brighter gaps in the canopy, and splitting is thought to help light reach lower leaves and let wind pass through without tearing the plant apart. Indoors, a monstera kept in low or medium light will often keep producing solid leaves indefinitely, no matter how old it is. Move it somewhere with bright, indirect light — close to an east or west window, or a few feet back from a south-facing one — and new growth usually starts showing splits within a few leaves.
+
+A support pole helps too. Monsteras are vining araceae; a plant allowed to climb tends to mature and fenestrate faster than one left to sprawl.
+
+What won't help: more water, more fertilizer, or repotting. Overwatering in particular just risks root rot while you wait.
+
+If a plant is getting strong indirect light, has something to climb, and is still putting out entirely solid leaves after a year, patience is still the right answer before intervention.`,
+  },
+  {
     slug: 'taking-a-cutting-that-actually-roots',
     title: 'Taking a Cutting That Actually Roots',
     plantAccession: '',
     dek: 'Where you cut matters more than what you cut with.',
     published: true,
+    sortOrder: 4,
     body: `DRAFT — voice not yet reviewed by the owner.
 
 Most rooting failures come down to one mistake: cutting in the wrong place. For vining plants like pothos and philodendron, roots only form at nodes — the small bump or aerial-root nub where a leaf attaches to the stem. A cutting with no node on it, no matter how healthy the leaf looks, will not root.
@@ -296,11 +386,70 @@ In soil, the same node-below-the-surface rule applies. A rooting hormone isn't n
 The single biggest variable is patience: check for resistance by giving the cutting a very gentle tug after a couple of weeks rather than pulling it up to look.`,
   },
   {
+    slug: 'philodendron-care-guide',
+    title: "The Philodendron Wants to Climb, But Won't Complain If It Can't",
+    plantAccession: 'WG·P·004',
+    dek: 'Forgiving without being boring, and it tells you clearly when something is wrong.',
+    published: true,
+    sortOrder: 5,
+    body: `DRAFT — voice not yet reviewed by the owner.
+
+Philodendrons are the plant that makes new growers feel competent and experienced growers feel understood. They are forgiving without being boring. They grow visibly, respond to good light, and tell you clearly when something is wrong — which is more than most houseplants will do.
+
+The one leaving here is a heartleaf philodendron (Philodendron hederaceum), propagated from a cutting taken in this house, rooted in water, and potted into soil once the root system was ready to support it. It is already growing. Your job is not to fix it; it is to keep it going.
+
+## Light
+
+Bright indirect light is the sweet spot. An east-facing window, or a few feet back from a south or west exposure. Philodendrons tolerate lower light better than most aroids — they will survive a dim corner, but they will grow slowly and the leaves will get smaller over time. Give it decent light and it rewards you with large, rich leaves and quick new growth.
+
+## Water
+
+Water when the top inch of soil goes dry. In a 4-inch pot in a bright spot, that is probably every five to seven days in summer, less in winter. The philodendron will begin to droop slightly when it is thirsty — that droop is a request, not an emergency. Water thoroughly, let it drain completely, and empty the saucer so it is not sitting in standing water.
+
+Overwatering is the most common way to kill a philodendron. When in doubt, wait another day.
+
+## Humidity and temperature
+
+It prefers humidity but handles normal household air without complaint. It does not want to be near a heating or air conditioning vent, or against a cold window in winter. Room temperature — anywhere between 60 and 85°F — is fine.
+
+## Feeding
+
+A balanced liquid fertilizer once a month during the growing season (spring through early fall) is enough. Skip it in winter. This plant does not need to be pushed.
+
+## The climbing thing
+
+In the wild, philodendrons climb. Given a moss pole or a piece of bark to hold onto, the heartleaf will produce larger leaves and grow faster. It does not require one — it will trail happily from a shelf or a hanging basket — but if you want to see what it can really do, give it something to climb.
+
+## What to watch for
+
+Yellow leaves usually mean overwatering. Small or pale new leaves usually mean low light or no fertilizer during growing season. Brown tips can mean low humidity or inconsistent watering. All of these are recoverable; none of them are emergencies.`,
+  },
+  {
+    slug: 'the-zz-does-not-want-repotting-either',
+    title: 'Repotting Without Killing Anything',
+    plantAccession: '',
+    dek: 'Most houseplants want to be repotted less often than people think.',
+    published: true,
+    sortOrder: 6,
+    body: `DRAFT — voice not yet reviewed by the owner.
+
+The most common repotting mistake isn't technique, it's timing — moving a plant into a new pot far more often than it needs.
+
+A plant is generally ready for a larger pot when roots are visibly circling the inside of the nursery pot, growing out of the drainage hole, or when the plant needs watering unusually often because there's more root than soil left to hold moisture. Absent those signs, an annual repot isn't necessary and can do more harm than good, especially to slow growers like ZZ plants, which actually prefer being slightly snug.
+
+When it is time, go up only one pot size — roughly two inches in diameter larger than the current pot. A pot that's dramatically bigger holds far more soil than the roots can use, and that excess soil stays wet long after the plant needs water, which is a common cause of root rot after a well-intentioned repot.
+
+Gently loosen circling roots at the bottom and sides before setting the plant in new mix, water it in well, and expect a short adjustment stall — a week or two of little visible growth is normal and not a sign of failure.
+
+The best time to repot most houseplants is during active growth, spring into summer, rather than winter, when roots recover more slowly from any disturbance.`,
+  },
+  {
     slug: 'spider-plant-babies',
     title: 'What To Do With All the Spider Plant Babies',
     plantAccession: '',
     dek: 'Spiderettes are the plant doing your propagation for you.',
     published: true,
+    sortOrder: 7,
     body: `DRAFT — voice not yet reviewed by the owner.
 
 Chlorophytum comosum is one of the few houseplants that hands you fully formed baby plants without being asked. Once a spider plant matures — usually after it's slightly rootbound — it sends out long stems tipped with small plantlets, sometimes called spiderettes or pups, each one a genetic clone of the parent.
@@ -317,6 +466,7 @@ Light and water needs for a new pup are the same as for the adult plant: bright 
     plantAccession: '',
     dek: 'The failure mode is almost always the pot, not the plant.',
     published: true,
+    sortOrder: 8,
     body: `DRAFT — voice not yet reviewed by the owner.
 
 Aloe vera is a succulent, and nearly every indoor aloe problem traces back to treating it like a leafy houseplant instead of a desert plant.
@@ -328,23 +478,5 @@ Water deeply but infrequently: soak until water runs from the drainage hole, the
 Light matters more than most people expect. Aloe kept in low light stretches — the leaves splay flat and reach toward the nearest window instead of standing upright — and rarely looks good long-term. A bright, sunny windowsill, ideally with a few hours of direct light, keeps the rosette compact.
 
 The gel inside a leaf is genuinely useful for minor kitchen burns, but it's worth knowing the yellow latex just under the skin of the leaf is a skin irritant for some people — rinse a cut leaf before using the gel.`,
-  },
-  {
-    slug: 'the-zz-does-not-want-repotting-either',
-    title: 'Repotting Without Killing Anything',
-    plantAccession: '',
-    dek: 'Most houseplants want to be repotted less often than people think.',
-    published: true,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-The most common repotting mistake isn't technique, it's timing — moving a plant into a new pot far more often than it needs.
-
-A plant is generally ready for a larger pot when roots are visibly circling the inside of the nursery pot, growing out of the drainage hole, or when the plant needs watering unusually often because there's more root than soil left to hold moisture. Absent those signs, an annual repot isn't necessary and can do more harm than good, especially to slow growers like ZZ plants, which actually prefer being slightly snug.
-
-When it is time, go up only one pot size — roughly two inches in diameter larger than the current pot. A pot that's dramatically bigger holds far more soil than the roots can use, and that excess soil stays wet long after the plant needs water, which is a common cause of root rot after a well-intentioned repot.
-
-Gently loosen circling roots at the bottom and sides before setting the plant in new mix, water it in well, and expect a short adjustment stall — a week or two of little visible growth is normal and not a sign of failure.
-
-The best time to repot most houseplants is during active growth, spring into summer, rather than winter, when roots recover more slowly from any disturbance.`,
   },
 ];

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" fill="none" role="img" aria-hidden="true">
+  <defs>
+    <filter id="p5" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.038" numOctaves="4" seed="5" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g filter="url(#p5)" stroke="#20261C" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 30h68v34H16z"/>
+    <path d="M16 30l8-8h60l-8 8"/>
+    <path d="M84 30l-8-8v34l8 8" opacity=".55" stroke-width=".7"/>
+    <path d="M50 22v42"/>
+    <path d="M50 22c-5-7-13-8-15-3s5 6 15 3zM50 22c5-7 13-8 15-3s-5 6-15 3z"/>
+    <path d="M16 47h68" stroke-dasharray="2 4" opacity=".6" stroke-width=".7"/>
+    <path d="M18.0 62.0l5 -28M22.0 62.0l5 -28M26.0 62.0l5 -28M30.0 62.0l5 -28M34.0 62.0l5 -28M38.0 62.0l5 -28M42.0 62.0l5 -28M46.0 62.0l5 -28" stroke-width=".6" opacity="0.22"/>
+    <path d="M54.0 62.0l5 -28M58.0 62.0l5 -28M62.0 62.0l5 -28M66.0 62.0l5 -28M70.0 62.0l5 -28M74.0 62.0l5 -28M78.0 62.0l5 -28" stroke-width=".6" opacity="0.22"/>
+  </g>
+</svg>

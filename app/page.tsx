@@ -16,7 +16,7 @@ export default async function HomePage() {
     getCareGuides(),
   ]);
 
-  const bakery = products.filter((p) => p.type === 'bakery' || p.type === 'occasion');
+  const bakery = products.filter((p) => p.type === 'bakery' || p.type === 'reservat');
   const plants = products.filter((p) => p.type === 'plant');
 
   return (

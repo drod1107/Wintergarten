@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { markOrderPaid } from '@/lib/store';
+import { buildOrderPayload, notifyZapier } from '@/lib/zapier';
 
 export async function POST(req: NextRequest) {
   const stripe = getStripe();
@@ -23,7 +24,11 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as { id: string; payment_status: string };
     if (session.payment_status === 'paid') {
-      await markOrderPaid(session.id);
+      const order = await markOrderPaid(session.id);
+      // Fan the paid order out to Zapier when a hook URL is configured.
+      // notifyZapier swallows its own failures, so a broken Zap can never
+      // make us return non-2xx and have Stripe redeliver a settled payment.
+      if (order) await notifyZapier(buildOrderPayload(order));
     }
   }
 

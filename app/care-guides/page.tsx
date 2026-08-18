@@ -8,7 +8,7 @@ import { SITE_URL } from '@/lib/site';
 export const metadata: Metadata = {
   title: 'Growing Notes — Houseplant Care Guides',
   description:
-    'Care guides for pothos, monstera, ZZ plant, spider plant and aloe — plus propagation and taking cuttings. Written to be useful whether or not you ever buy anything.',
+    'Care guides for pothos, philodendron, ZZ plant, monstera, spider plant and aloe — plus propagation and taking cuttings. Written to be useful whether or not you ever buy anything.',
   alternates: { canonical: `${SITE_URL}/care-guides` },
 };
 

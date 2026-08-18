@@ -4,6 +4,7 @@ import {
   createOrder,
   getEffectiveWindowState,
   getProducts,
+  isOrderable,
   setOrderStripeSession,
 } from '@/lib/store';
 import { getStripe, isStripeConfigured } from '@/lib/stripe';
@@ -84,6 +85,11 @@ export async function POST(req: NextRequest) {
   for (const line of cartLines) {
     const product = products.find((p) => p.id === line.id);
     if (!product) return badRequest(`Unknown item: ${line.id}`);
+    if (!isOrderable(product)) {
+      return badRequest(
+        `${product.name} is arranged directly rather than bought from the cart — send it as an enquiry and we'll come back to you.`
+      );
+    }
     if (product.capacity !== null && product.orderedCount + line.qty > product.capacity) {
       const remaining = Math.max(0, product.capacity - product.orderedCount);
       return badRequest(
