@@ -61,6 +61,17 @@ new" form — same fields, plus a delete button.
 
 Each row saves independently — you don't need to save the whole page.
 
+**Items marked "price coming soon".** Pumpkin Loaf and Philodendron don't
+have prices yet, so the site shows *Coming soon* where the price goes and
+they can't be added to a cart — nobody can be charged an amount that hasn't
+been decided. Type a real price into that row and save, and both of those
+resolve on their own: the price appears and the item becomes orderable.
+
+**Der Smoking and Occasion Cakes** are the **Reservat** tier. They're listed
+on the site and priced, but deliberately aren't add-to-cart items, because
+both need a week's notice and a conversation. The order page points people
+to the notes box for these instead.
+
 ## 5. Export orders
 
 **Orders** section → **Export CSV**. Downloads every order ever placed —

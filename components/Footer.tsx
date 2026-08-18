@@ -11,7 +11,6 @@ export default function Footer() {
         <Link href="/care-guides">Growing notes</Link>
         <Link href="/story">Story</Link>
         <Link href="/order">Order</Link>
-        <Link href="/photo-credits">Photo credits</Link>
         <Link href="/admin">Admin</Link>
       </nav>
     </footer>

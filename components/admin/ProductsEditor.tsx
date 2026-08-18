@@ -18,6 +18,9 @@ function ProductRow({ product }: { product: Product }) {
         body: JSON.stringify({
           ...product,
           priceCents: Math.round(parseFloat(price || '0') * 100),
+          // Setting a real price is what resolves "coming soon" — otherwise
+          // the item would stay unorderable after the owner had priced it.
+          pricePending: product.pricePending && !(parseFloat(price || '0') > 0),
           active,
           capacity: capacity === '' ? null : Number(capacity),
         }),
@@ -37,6 +40,7 @@ function ProductRow({ product }: { product: Product }) {
         </div>
         <div className="typed" style={{ color: 'var(--rust)' }}>
           {product.id}
+          {product.pricePending && ' · price coming soon'}
         </div>
       </td>
       <td>
@@ -88,7 +92,8 @@ export default function ProductsEditor({ products }: { products: Product[] }) {
       <h2>Products</h2>
       <p style={{ fontSize: 13, marginBottom: 14 }}>
         Price, batch capacity and whether an item is listed at all. Capacity resets when you open a new
-        order window.
+        order window. An item marked &ldquo;price coming soon&rdquo; is shown on the site but can&apos;t
+        be ordered — saving a price above zero makes it orderable.
       </p>
       <div className="table-scroll">
         <table className="admin-table">

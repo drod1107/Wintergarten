@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
-import { specimenIcon } from './specimen-icons';
-import { stockPhotoFor } from '@/lib/stock-photos';
+import { TIER_LABEL } from '@/lib/types';
 
 function formatPrice(cents: number, note: string) {
   const dollars = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
@@ -19,22 +18,20 @@ export default function SpecimenCard({
   product: Product;
   determination: string;
 }) {
-  const isOccasion = product.type === 'occasion';
+  const isReservat = product.type === 'reservat';
   const soldOut = product.capacity !== null && product.orderedCount >= product.capacity;
-  const photo = stockPhotoFor(product.imageNote);
+  const tier = TIER_LABEL[product.type];
 
   return (
-    <article className={`plate${isOccasion ? ' occasion' : ''}${soldOut ? ' sold-out' : ''}`}>
+    <article className={`plate${isReservat ? ' reservat' : ''}${soldOut ? ' sold-out' : ''}`}>
       <div className="tab typed">
         <span>{product.id}</span>
-        <span>{product.specs[2]?.value || product.specs[0]?.value || ''}</span>
+        <span>{tier || product.specs[0]?.value || ''}</span>
       </div>
       <div className="frame">
-        {photo ? (
-          <img src={photo.url} alt={`${product.name}, ${product.subtitle}`} loading="lazy" decoding="async" />
-        ) : (
-          specimenIcon(product.imageNote, isOccasion)
-        )}
+        {/* Drawn in-house; see public/images. Decorative — the name and specs
+            below carry the meaning, so it stays out of the accessibility tree. */}
+        <img src={`/images/${product.imageNote}.svg`} alt="" aria-hidden="true" loading="lazy" decoding="async" />
         <span className="det">{determination}</span>
       </div>
       {soldOut && <span className="badge">Sold out this window</span>}
@@ -49,7 +46,13 @@ export default function SpecimenCard({
         ))}
         <div>
           <dt>Price</dt>
-          <dd className="fig">{formatPrice(product.priceCents, product.priceNote)}</dd>
+          <dd className="fig">
+            {product.pricePending ? (
+              <span style={{ fontSize: 13, fontWeight: 400 }}>Coming soon</span>
+            ) : (
+              formatPrice(product.priceCents, product.priceNote)
+            )}
+          </dd>
         </div>
       </dl>
       {product.allergens && (

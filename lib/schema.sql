@@ -4,12 +4,13 @@
 
 create table if not exists products (
   id text primary key,                 -- accession number, e.g. 'WG-B-001'
-  type text not null check (type in ('bakery', 'plant', 'occasion')),
+  type text not null check (type in ('bakery', 'plant', 'reservat')),
   name text not null,
   subtitle text not null default '',
   specs jsonb not null default '[]',   -- [{label, value}]
   price_cents integer not null,
   price_note text not null default '', -- e.g. '· $22 half dozen'
+  price_pending boolean not null default false, -- owner has not set a price; listed but not orderable
   ships boolean not null default true,
   capacity integer,                    -- null = unlimited
   ordered_count integer not null default 0,
@@ -91,6 +92,7 @@ create table if not exists care_guides (
   dek text not null default '',
   body text not null default '',
   published boolean not null default true,
+  sort_order integer not null default 0, -- drives the 01, 02, … numbering on the index
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -101,6 +103,18 @@ create table if not exists subscribers (
   source text not null default 'site',
   created_at timestamptz not null default now()
 );
+
+-- Idempotent column adds, so this file can be re-run against a database
+-- created by an earlier version of it. `create table if not exists` above
+-- is a no-op once a table exists, so new columns have to be added here.
+alter table products add column if not exists price_pending boolean not null default false;
+alter table care_guides add column if not exists sort_order integer not null default 0;
+
+-- The occasion tier was renamed to Reservat.
+alter table products drop constraint if exists products_type_check;
+update products set type = 'reservat' where type = 'occasion';
+alter table products add constraint products_type_check
+  check (type in ('bakery', 'plant', 'reservat'));
 
 insert into order_window (id, status) values (1, 'closed') on conflict (id) do nothing;
 insert into stand_status (id) values (1) on conflict (id) do nothing;

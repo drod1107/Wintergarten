@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" fill="none" role="img" aria-hidden="true">
+  <defs>
+    <filter id="p8" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.038" numOctaves="4" seed="8" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g filter="url(#p8)" stroke="#20261C" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M47 74V12h6v62z"/>
+    <path d="M47 20h6M47 30h6M47 40h6M47 50h6M47 60h6" stroke-width=".55" opacity=".45"/>
+    <path d="M47.5 73.0l2 -61M50.0 73.0l2 -61" stroke-width=".6" opacity="0.3"/>
+    <path d="M47 24c-7 0-13 3-17 8M53 36c7 0 13 3 17 8M47 48c-7 0-13 3-17 8M53 60c6 0 11 2 15 6" stroke-width=".8"/>
+    <g transform="translate(26 33) rotate(-32)" opacity="1"><path d="M0 10C-9.5 3,-8 -6,0 -1.5C8 -6,9.5 3,0 10Z"/><path d="M0 10V-1.2" stroke-width=".6" opacity=".6"/></g>
+    <g transform="translate(74 45) rotate(32)" opacity="1"><path d="M0 10C-9.5 3,-8 -6,0 -1.5C8 -6,9.5 3,0 10Z"/><path d="M0 10V-1.2" stroke-width=".6" opacity=".6"/></g>
+    <g transform="translate(26 57) rotate(-32)" opacity="1"><path d="M0 9.5C-9.025 2.85,-7.6000000000000005 -5.7,0 -1.425C7.6000000000000005 -5.7,9.025 2.85,0 9.5Z"/><path d="M0 9.5V-1.14" stroke-width=".6" opacity=".6"/></g>
+    <g transform="translate(70 68) rotate(30)" opacity="1"><path d="M0 8C-7.6 2.4,-6.4 -4.8,0 -1.2C6.4 -4.8,7.6 2.4,0 8Z"/><path d="M0 8V-0.96" stroke-width=".6" opacity=".6"/></g>
+    <path d="M40 74c3-4 17-4 20 0" stroke-width=".6" opacity=".5"/>
+  </g>
+</svg>

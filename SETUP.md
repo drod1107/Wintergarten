@@ -92,7 +92,46 @@ has ordinary outbound internet access.
 | `STRIPE_SECRET_KEY` | Checkout | Test or live, from the Stripe dashboard |
 | `STRIPE_PUBLISHABLE_KEY` | Checkout | Currently unused server-side but reserved for a future client Elements upgrade |
 | `STRIPE_WEBHOOK_SECRET` | Checkout reliability | Optional |
+| `ZAPIER_WEBHOOK_URL` | Order notifications | Optional; empty is skipped silently |
 | `NEXT_PUBLIC_SITE_URL` | Metadata, Stripe redirect URLs | Set to your real domain in production |
+
+## 4. Zapier notifications (optional)
+
+After Stripe confirms a payment, the webhook handler POSTs the order to
+`ZAPIER_WEBHOOK_URL` as JSON. Leave the variable empty and nothing is sent —
+the check is `lib/zapier.ts`, and a missing or blank URL is skipped silently,
+so this can be wired up later without touching code.
+
+To turn it on: create a Zap with a **Webhooks by Zapier → Catch Hook**
+trigger, copy the URL Zapier gives you into `ZAPIER_WEBHOOK_URL`, and
+redeploy. The payload looks like this:
+
+```json
+{
+  "event": "order.paid",
+  "orderId": 41,
+  "timestamp": "2026-08-18T14:02:11.000Z",
+  "customerName": "…",
+  "customerEmail": "…",
+  "customerPhone": "…",
+  "branch": "pickup",
+  "pickupDay": "Saturdays",
+  "address": "…",
+  "items": [{ "name": "Classic Fudge Brownie", "qty": 6, "priceEach": "4.00", "lineTotal": "24.00" }],
+  "itemsSummary": "6 × Classic Fudge Brownie",
+  "total": "24.00",
+  "totalCents": 2400,
+  "currency": "usd"
+}
+```
+
+`itemsSummary` is a flat string of the same information, because Zapier's
+simpler actions (send a text, append a spreadsheet row) can't iterate the
+`items` array.
+
+A failing or slow Zap never breaks a payment: the call has an 8-second
+timeout and swallows its own errors, so Stripe always gets a 2xx and won't
+redeliver an order that has already been settled.
 
 ## Local development
 

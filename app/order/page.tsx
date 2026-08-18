@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import OrderForm from '@/components/OrderForm';
-import { getProducts, getEffectiveWindowState, getOrderWindow } from '@/lib/store';
+import { getProducts, getEffectiveWindowState, getOrderWindow, isOrderable } from '@/lib/store';
 import { SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -41,7 +41,8 @@ export default async function OrderPage() {
 
           <div style={{ maxWidth: 640 }}>
             <OrderForm
-              products={products}
+              products={products.filter(isOrderable)}
+              byArrangement={products.filter((p) => !isOrderable(p))}
               pickupDaysDefault={orderWindow.pickupDays}
               windowOpen={windowState.state === 'open'}
             />

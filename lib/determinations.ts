@@ -4,13 +4,13 @@
 const DETERMINATIONS: Record<string, string> = {
   brownie: 'Cut thick, on purpose',
   snickerdoodle: 'Coated twice',
-  'angel-food-cupcake': 'Torched to order',
-  'occasion-box': "One week's notice",
+  'iced-lemon-loaf': 'Iced on the rack',
+  'pumpkin-loaf': 'In its season',
+  'der-smoking': "One week's notice",
+  'occasion-cake': 'Made to the occasion',
   pothos: 'Cutting, this house',
-  monstera: 'Wants a pole',
+  philodendron: 'Rooted in water first',
   'zz-plant': 'Stores its own water',
-  aloe: 'Sunny sill, dry roots',
-  'spider-plant': 'Sends its own cuttings',
 };
 
 export function determinationFor(imageNote: string): string {

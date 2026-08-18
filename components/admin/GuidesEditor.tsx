@@ -5,8 +5,8 @@ import type { CareGuide } from '@/lib/types';
 
 type Draft = Omit<CareGuide, 'createdAt' | 'updatedAt'>;
 
-function emptyDraft(): Draft {
-  return { slug: '', title: '', plantAccession: '', dek: '', body: '', published: true };
+function emptyDraft(sortOrder = 0): Draft {
+  return { slug: '', title: '', plantAccession: '', dek: '', body: '', published: true, sortOrder };
 }
 
 function GuideForm({ initial, onSaved }: { initial: Draft; onSaved: (slug: string) => void }) {
@@ -30,7 +30,7 @@ function GuideForm({ initial, onSaved }: { initial: Draft; onSaved: (slug: strin
       if (!res.ok) throw new Error(data.error || 'Save failed.');
       setMsg({ kind: 'success', text: 'Saved.' });
       onSaved(data.slug);
-      if (isNew) setDraft(emptyDraft());
+      if (isNew) setDraft(emptyDraft(initial.sortOrder));
     } catch (err: any) {
       setMsg({ kind: 'error', text: err.message });
     } finally {
@@ -86,6 +86,17 @@ function GuideForm({ initial, onSaved }: { initial: Draft; onSaved: (slug: strin
         <label htmlFor={`${uid}-body`}>Body</label>
         <textarea id={`${uid}-body`} rows={8} value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
       </div>
+      <div className="form-row">
+        <label htmlFor={`${uid}-sort`}>Position in the list</label>
+        <input
+          id={`${uid}-sort`}
+          type="number"
+          min={0}
+          value={draft.sortOrder}
+          onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) || 0 })}
+        />
+        <p className="hint">Lowest first. This is what the 01, 02, 03 numbering on the index follows.</p>
+      </div>
       <div className="toggle-row form-row">
         <label htmlFor={`${uid}-published`} style={{ marginBottom: 0 }}>Published</label>
         <input
@@ -125,7 +136,7 @@ export default function GuidesEditor({ guides }: { guides: CareGuide[] }) {
         <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600, textTransform: 'uppercase', fontSize: 13, margin: '14px 0' }}>
           Add a new guide
         </summary>
-        <GuideForm initial={emptyDraft()} onSaved={handleSaved} />
+        <GuideForm initial={emptyDraft(guides.length + 1)} onSaved={handleSaved} />
       </details>
 
       {guides.map((g) => (

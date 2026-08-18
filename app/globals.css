@@ -201,10 +201,14 @@ h1.big .split:last-child{margin-left:14%;color:var(--forest);}
   background:var(--paper);
   aspect-ratio:5/4;
   display:flex;align-items:center;justify-content:center;
-  overflow:hidden;
 }
+/* The determination slip is pinned to hang past the frame's bottom edge, so
+   the frame must not clip it. The drawings are sized to sit inside the frame
+   rather than bleed to its edges, so nothing else needs clipping here. */
 .frame svg{width:70%;height:70%;}
-.frame img{width:100%;height:100%;object-fit:cover;}
+/* The specimen drawings are line art on a transparent ground, so they are
+   sized to sit inside the corner rules rather than fill the frame. */
+.frame img{width:74%;height:74%;object-fit:contain;}
 .frame::before,.frame::after{
   content:"";position:absolute;width:13px;height:13px;border-color:var(--rust);border-style:solid;opacity:.7;
 }
@@ -238,15 +242,19 @@ h1.big .split:last-child{margin-left:14%;color:var(--forest);}
   color:var(--rust);border-bottom:1px solid var(--rust);padding-bottom:2px;
 }
 
-.plate.occasion{background:var(--forest);color:var(--paper);}
-.plate.occasion .frame{background:#27311F;}
-.plate.occasion .frame::before,.plate.occasion .frame::after{border-color:var(--gold);}
-.plate.occasion .tab,.plate.occasion .binom,.plate.occasion .spec dt{color:var(--gold);}
-.plate.occasion .tab{border-bottom-color:rgba(184,173,143,.4);}
-.plate.occasion .spec{border-top-color:rgba(184,173,143,.4);}
-.plate.occasion .spec div{border-bottom-color:rgba(184,173,143,.2);}
-.plate.occasion .det{background:var(--gold);border-color:var(--gold);color:var(--forest);}
-.plate.occasion .record-link{color:var(--gold);border-bottom-color:var(--gold);}
+.plate.reservat{background:var(--forest);color:var(--paper);}
+.plate.reservat .frame{background:#27311F;}
+/* Reservat plates are dark, and the drawings are dark graphite on nothing.
+   Inverting the line art (the ground is transparent, so only the strokes
+   change) lifts them to a warm light tone that matches the gold rules. */
+.plate.reservat .frame img{filter:invert(1) sepia(.45) saturate(.55) brightness(1.02);}
+.plate.reservat .frame::before,.plate.reservat .frame::after{border-color:var(--gold);}
+.plate.reservat .tab,.plate.reservat .binom,.plate.reservat .spec dt{color:var(--gold);}
+.plate.reservat .tab{border-bottom-color:rgba(184,173,143,.4);}
+.plate.reservat .spec{border-top-color:rgba(184,173,143,.4);}
+.plate.reservat .spec div{border-bottom-color:rgba(184,173,143,.2);}
+.plate.reservat .det{background:var(--gold);border-color:var(--gold);color:var(--forest);}
+.plate.reservat .record-link{color:var(--gold);border-bottom-color:var(--gold);}
 
 .plate.sold-out{opacity:.6;}
 .plate .badge{
@@ -328,6 +336,13 @@ footer.site-footer nav a:hover{color:var(--rust);}
 
 .prose{max-width:68ch;font-size:16px;line-height:1.75;}
 .prose h2{font-size:clamp(22px,6vw,30px);margin:2em 0 .6em;}
+/* Section headings in owner-written copy double as dividers, in keeping with
+   the ruled-sheet feel of the rest of the page. */
+.prose .prose-head{
+  font-size:clamp(18px,4.4vw,23px);letter-spacing:.03em;
+  border-top:1px solid var(--hair);padding-top:.85em;margin:2.2em 0 .7em;
+}
+.prose .prose-head:first-child{border-top:0;padding-top:0;margin-top:0;}
 .prose p{margin:0 0 1.2em;}
 .prose a{color:var(--rust);text-decoration-thickness:1px;}
 
@@ -466,7 +481,7 @@ footer.site-footer nav a:hover{color:var(--rust);}
   body::before{display:none;}
   .site-nav, footer.site-footer, .skip-link, .demo-banner, .no-print{display:none!important;}
   body{background:#fff;color:#000;}
-  .record, .plate.occasion{background:#fff!important;color:#000!important;}
+  .record, .plate.reservat{background:#fff!important;color:#000!important;}
   a{color:#000;text-decoration:underline;}
   .shell{padding:0;max-width:100%;}
   .holes{display:none;}

@@ -22,16 +22,33 @@ herbarium-sheet mockup.
 
 ## What's real vs. placeholder
 
-Per the brief's instruction not to invent medical, legal, or biographical
-content: the kitchen record's cross-contact protocol, per-item ingredient
-lists, and the story page are structurally complete but intentionally
-empty, marked with a visible dashed-border "awaiting content from owner"
-flag rather than any invented text. Product names, prices and descriptions
-follow the mockup's demonstration copy as a starting point (also flagged as
-editable in `/admin`) — replace before real launch. The seven care guides
-contain genuine, factual, general horticultural information (not
-business-specific claims), each marked "DRAFT — voice not yet reviewed by
-the owner" so nobody mistakes it for the owner's own words.
+The product catalog, the story page, the kitchen record's cross-contact
+statement and the philodendron care guide are the owner's own supplied
+content, used as written.
+
+What is still outstanding is marked rather than invented, per the standing
+instruction not to write medical, legal or biographical content on the
+owner's behalf:
+
+- **Ingredient lists** for the Iced Lemon Loaf, Pumpkin Loaf and Der Smoking,
+  and the page-level "allergens present in some items" statement, render a
+  visible dashed-border *awaiting content from owner* flag.
+- **Prices** not yet set (Pumpkin Loaf, Philodendron) display *Coming soon*
+  and the item cannot be added to a cart — see `pricePending` in
+  `lib/types.ts`. Saving a real price in `/admin` resolves both at once.
+- **Care guides** other than the philodendron one contain general, factual
+  horticultural information rather than business-specific claims, each
+  marked "DRAFT — voice not yet reviewed by the owner."
+
+## Product illustrations
+
+`public/images/*.svg` — one pencil-sketch drawing per product, authored for
+this site and committed to the repo. No external image hosts, no stock
+libraries, nothing to hotlink or rot. They're line art on a transparent
+ground, so the dark Reservat plates invert them to a warm light tone in CSS
+rather than needing a second set of files. Drop-in replacement by real
+photography later is a per-product change: the card reads
+`/images/{imageNote}.svg`.
 
 ## One deliberate deviation from the mockup's exact palette
 

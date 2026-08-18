@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" fill="none" role="img" aria-hidden="true">
+  <defs>
+    <filter id="p3" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.038" numOctaves="4" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g filter="url(#p3)" stroke="#20261C" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 40c0-9 7-14 20-14h24c13 0 20 5 20 14v20H18z"/>
+    <path d="M18 40c6 3 12 1 18 3.5s12 .5 18 3 12 .5 18-2.5 6-4 10-4"/>
+    <path d="M36 43.5v16.5M54 46v14"/>
+    <path d="M26 60v-13" stroke-width=".7" opacity=".55"/>
+    <circle cx="79" cy="24" r="9"/>
+    <path d="M79 15v18M70 24h18M72.6 17.6l12.8 12.8M72.6 30.4l12.8-12.8" stroke-width=".65" opacity=".7"/>
+    <path d="M20.0 59.0l4 -12M23.5 59.0l4 -12M27.0 59.0l4 -12M30.5 59.0l4 -12" stroke-width=".6" opacity="0.3"/>
+    <path d="M56.0 59.0l4 -12M60.0 59.0l4 -12M64.0 59.0l4 -12M68.0 59.0l4 -12M72.0 59.0l4 -12M76.0 59.0l4 -12M80.0 59.0l4 -12" stroke-width=".6" opacity="0.22"/>
+  </g>
+</svg>

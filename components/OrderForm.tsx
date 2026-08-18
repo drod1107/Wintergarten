@@ -12,10 +12,14 @@ type BranchInfo =
 
 export default function OrderForm({
   products,
+  byArrangement,
   pickupDaysDefault,
   windowOpen,
 }: {
   products: Product[];
+  // Reservat items and anything without a settled price: listed so nobody
+  // wonders where they went, but arranged by conversation instead of bought.
+  byArrangement: Product[];
   pickupDaysDefault: string;
   windowOpen: boolean;
 }) {
@@ -340,6 +344,18 @@ export default function OrderForm({
               <span className="typed">Total</span>
               <span className="amount">${(subtotalCents / 100).toFixed(2)}</span>
             </div>
+
+            {byArrangement.length > 0 && (
+              <div className="branch-banner" style={{ marginTop: 18 }}>
+                <span className="typed">By arrangement</span>
+                <p style={{ marginBottom: 0 }}>
+                  {byArrangement.map((p) => p.name).join(', ')} —{' '}
+                  {byArrangement.length === 1 ? 'this one is' : 'these are'} arranged directly rather
+                  than added to a cart. Say what you have in mind in the notes below and we&apos;ll come
+                  back to you.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="form-section">
