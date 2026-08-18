@@ -11,6 +11,6 @@ export async function POST(req: NextRequest) {
   if (!body.id || !body.name) {
     return NextResponse.json({ error: 'Product id and name are required.' }, { status: 400 });
   }
-  await upsertProduct(body);
+  await upsertProduct({ ...body, pricePending: Boolean(body.pricePending) });
   return NextResponse.json({ ok: true });
 }
