@@ -189,6 +189,8 @@ header.hero{padding:26px 0 0;}
   display:flex;justify-content:space-between;gap:10px;
   color:var(--rust);border-bottom:1px dashed var(--hair);padding-bottom:6px;
 }
+.plate .tab span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.plate .tab span:first-child{flex-shrink:0;}
 .frame{
   position:relative;margin:12px 0 0;
   background:var(--paper);
@@ -217,8 +219,8 @@ header.hero{padding:26px 0 0;}
   box-shadow:0 1px 0 rgba(32,38,28,.12);
 }
 
-.plate h3{margin:20px 0 2px;font-size:clamp(30px,9vw,52px);}
-.plate .binom{display:block;font-size:17px;color:var(--rust);margin-bottom:12px;}
+.plate h3{margin:20px 0 2px;font-size:clamp(24px,6.5vw,40px);line-height:1.08;overflow-wrap:break-word;hyphens:auto;}
+.plate .binom{display:block;font-size:17px;color:var(--rust);margin-bottom:12px;overflow-wrap:break-word;}
 .spec{margin:0;padding-top:11px;border-top:1px solid var(--hair);}
 .spec div{display:flex;gap:12px;padding:5px 0;border-bottom:1px solid var(--hair-2);}
 .spec div:last-child{border-bottom:0;}

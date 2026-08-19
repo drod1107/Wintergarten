@@ -100,8 +100,9 @@ export default function OrderForm({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ kind, name, email, phone, wholesaleBusiness, wholesaleQty, notes }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+        let data: any = {};
+        try { data = await res.json(); } catch { /* empty body */ }
+        if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
         window.location.href = data.redirect;
       } catch (err: any) {
         setError(err.message);
@@ -140,8 +141,9 @@ export default function OrderForm({
           notes,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+      let data: any = {};
+      try { data = await res.json(); } catch { /* empty body */ }
+      if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else if (data.redirect) {
