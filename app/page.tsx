@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import SpecimenCard from '@/components/SpecimenCard';
@@ -38,11 +39,17 @@ export default async function HomePage() {
               <span>Sheet 01</span>
             </div>
 
-            <h1 className="big">
-              <span className="split">Winter</span>
-              <span className="split">garten</span>
-            </h1>
-            <p className="full-name">Bakehouse + Botanicals</p>
+            <h1 className="visually-hidden">Wintergarten Bakehouse + Botanicals</h1>
+            <div className="hero-logo" aria-hidden="true">
+              <Image
+                src="/images/logo.jpg"
+                alt=""
+                width={900}
+                height={320}
+                priority
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+              />
+            </div>
 
             <p className="strapline">
               A small bakery and a small collection of plants, kept under one roof on Highway H.
