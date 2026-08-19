@@ -103,7 +103,7 @@ export async function recordOrderInZoho(order: OrderRecord): Promise<void> {
     const contactId = await findOrCreateContact(token, order);
     if (!contactId) return;
 
-    const res = await zohoFetch(token, '/salesorders', {
+    const res = await zohoFetch(token, '/invoices', {
       method: 'POST',
       body: JSON.stringify({
         customer_id: contactId,
@@ -125,9 +125,10 @@ export async function recordOrderInZoho(order: OrderRecord): Promise<void> {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      console.error(`[zoho] sales order create failed for order ${order.id}: ${res.status} ${body.slice(0, 300)}`);
+      console.error(`[zoho] invoice create failed for order ${order.id}: ${res.status} ${body.slice(0, 300)}`);
     }
   } catch (err) {
     console.error(`[zoho] fanout failed for order ${order.id}:`, err);
   }
 }
+
