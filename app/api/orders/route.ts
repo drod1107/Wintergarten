@@ -166,21 +166,28 @@ export async function POST(req: NextRequest) {
   }
 
   const stripe = getStripe()!;
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    customer_email: email,
-    line_items: lineItems.map((li) => ({
-      quantity: li.qty,
-      price_data: {
-        currency: 'usd',
-        unit_amount: li.priceCents,
-        product_data: { name: li.name },
-      },
-    })),
-    success_url: `${SITE_URL}/order/confirmation?orderId=${orderId}&branch=${branch}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE_URL}/order?resume=${orderId}`,
-    metadata: { orderId: String(orderId) },
-  });
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer_email: email,
+      line_items: lineItems.map((li) => ({
+        quantity: li.qty,
+        price_data: {
+          currency: 'usd',
+          unit_amount: li.priceCents,
+          product_data: { name: li.name },
+        },
+      })),
+      success_url: `${SITE_URL}/order/confirmation?orderId=${orderId}&branch=${branch}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}/order?resume=${orderId}`,
+      metadata: { orderId: String(orderId) },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Payment setup failed.';
+    console.error('[orders] Stripe session creation failed:', message);
+    return NextResponse.json({ error: 'Payment setup failed — please try again.' }, { status: 502 });
+  }
 
   await setOrderStripeSession(orderId, session.id);
   return NextResponse.json({ checkoutUrl: session.url });
