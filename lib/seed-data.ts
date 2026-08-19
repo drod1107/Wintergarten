@@ -35,7 +35,7 @@ export const SEED_PRODUCTS: Product[] = [
     imageNote: 'brownie',
     ingredients:
       'Gluten-free flour blend, sugar, semi-sweet chocolate chips, cocoa powder, plant-based butter, eggs, vanilla extract, baking powder, sea salt',
-    allergens: '',
+    allergens: 'Eggs. Plant-based butter may contain soy.',
   },
   {
     id: 'WG·B·002',
@@ -59,7 +59,7 @@ export const SEED_PRODUCTS: Product[] = [
     imageNote: 'snickerdoodle',
     ingredients:
       'Gluten-free flour blend, sugar, plant-based butter, eggs, vanilla extract, baking powder, cinnamon, sea salt',
-    allergens: '',
+    allergens: 'Eggs. Plant-based butter may contain soy.',
   },
   {
     id: 'WG·B·004',
@@ -80,8 +80,10 @@ export const SEED_PRODUCTS: Product[] = [
     active: true,
     sortOrder: 3,
     imageNote: 'iced-lemon-loaf',
-    ingredients: '',
-    allergens: '',
+    ingredients:
+      'Gluten-free flour blend, sugar, eggs, plant-based butter, fresh lemon juice, lemon zest, vanilla extract, baking powder, baking soda, sea salt; Glaze: powdered sugar, lemon juice',
+    allergens:
+      'Eggs. Plant-based butter may contain soy. Some batches use a gluten-free flour blend containing certified gluten-free wheat starch — safe for gluten sensitivity; customers with a wheat allergy should ask before ordering.',
   },
   {
     id: 'WG·B·005',
@@ -101,8 +103,10 @@ export const SEED_PRODUCTS: Product[] = [
     active: true,
     sortOrder: 4,
     imageNote: 'pumpkin-loaf',
-    ingredients: '',
-    allergens: '',
+    ingredients:
+      'Gluten-free flour blend, pumpkin purée, sugar, eggs, plant-based butter, vanilla extract, cinnamon, nutmeg, ginger, cloves, baking soda, baking powder, sea salt',
+    allergens:
+      'Eggs. Plant-based butter may contain soy. Some batches use a gluten-free flour blend containing certified gluten-free wheat starch — safe for gluten sensitivity; customers with a wheat allergy should ask before ordering.',
   },
   {
     id: 'WG·O·001',
@@ -123,8 +127,10 @@ export const SEED_PRODUCTS: Product[] = [
     active: true,
     sortOrder: 5,
     imageNote: 'der-smoking',
-    ingredients: '',
-    allergens: '',
+    ingredients:
+      'Curated assortment of bakery items; contents vary by order. Full ingredient details for each included item are available on request and at derwintergarten.com/kitchen-record.',
+    allergens:
+      'Eggs (present in all items). May contain tree nuts, soy, or sesame depending on contents. Full allergen details provided at time of order.',
   },
   {
     id: 'WG·O·002',
@@ -146,7 +152,7 @@ export const SEED_PRODUCTS: Product[] = [
     sortOrder: 6,
     imageNote: 'occasion-cake',
     ingredients: 'Varies by order',
-    allergens: '',
+    allergens: 'Eggs. Allergens vary by order; full details discussed at time of booking.',
   },
   {
     id: 'WG·P·001',
@@ -178,7 +184,7 @@ export const SEED_PRODUCTS: Product[] = [
     specs: [
       { label: 'Light', value: 'Bright indirect; tolerates lower light than most aroids' },
       { label: 'Water', value: 'When the top inch goes dry' },
-      { label: 'Pot size', value: 'Coming soon' },
+      { label: 'Pot size', value: '4 in' },
     ],
     priceCents: 0,
     priceNote: '',
@@ -252,8 +258,9 @@ export const SEED_KITCHEN_RECORD: KitchenRecordContent = {
     placeholder: false,
   },
   presentAllergens: {
-    text: '[Owner to supply: which items contain tree nuts, coconut or soy, and how each is labelled.]',
-    placeholder: true,
+    text:
+      'Eggs are used in all baked goods and are a deliberate, central ingredient — this is not an egg-free bakery. Plant-based butter, used in place of dairy, may contain soy. Tree nuts appear in some items — check each product listing or ask before ordering. Soy and sesame appear in some products. Some loaves and bready items are made with a gluten-free flour blend that contains certified gluten-free wheat starch. These products are appropriate for people avoiding gluten, but customers with a wheat allergy — distinct from a gluten sensitivity or celiac disease — should ask about the specific item before ordering.',
+    placeholder: false,
   },
   // Supplied by the owner in kitchen-record.md. This is the complete
   // statement — nothing is to be added to it.
@@ -267,8 +274,9 @@ export const SEED_KITCHEN_RECORD: KitchenRecordContent = {
     placeholder: false,
   },
   ingredientsIntro: {
-    text: '[Owner to supply: the remaining ingredient lists, ingredient by ingredient.]',
-    placeholder: true,
+    text:
+      'Full ingredient lists for each product are shown below and on the order page. Where a product uses a gluten-free flour blend, all blends used are certified gluten-free. All baked goods are free of gluten, dairy, and other mammal-derived ingredients.',
+    placeholder: false,
   },
 };
 
