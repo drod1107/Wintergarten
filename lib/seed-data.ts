@@ -48,8 +48,8 @@ export const SEED_PRODUCTS: Product[] = [
       { label: 'Yield', value: '36 per batch' },
       { label: 'Keeps', value: '5 days, sealed' },
     ],
-    priceCents: 200,
-    priceNote: '· $20 dozen',
+    priceCents: 300,
+    priceNote: '· $30 dozen',
     pricePending: false,
     ships: true,
     capacity: 60,
@@ -65,14 +65,14 @@ export const SEED_PRODUCTS: Product[] = [
     id: 'WG·B·004',
     type: 'bakery',
     name: 'Iced Lemon Loaf',
-    subtitle: 'iced, and sliced thick',
+    subtitle: 'per slice — iced, sliced thick',
     specs: [
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
       { label: 'Format', value: '9×5 loaf' },
-      { label: 'Sold as', value: 'By the slice, or whole and frozen' },
+      { label: 'Sold as', value: 'By the slice (see also: whole frozen loaf)' },
     ],
     priceCents: 425,
-    priceNote: '/slice · $15–22 whole (frozen)',
+    priceNote: '/slice',
     pricePending: false,
     ships: true,
     capacity: 24,
@@ -89,19 +89,68 @@ export const SEED_PRODUCTS: Product[] = [
     id: 'WG·B·005',
     type: 'bakery',
     name: 'Pumpkin Loaf',
-    subtitle: 'a seasonal loaf',
+    subtitle: 'per slice — warm spice, cool season',
     specs: [
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
       { label: 'Format', value: '9×5 loaf' },
+      { label: 'Sold as', value: 'By the slice (see also: whole frozen loaf)' },
     ],
-    priceCents: 0,
-    priceNote: '',
-    pricePending: true,
+    priceCents: 425,
+    priceNote: '/slice',
+    pricePending: false,
     ships: true,
     capacity: 24,
     orderedCount: 0,
     active: true,
     sortOrder: 4,
+    imageNote: 'pumpkin-loaf',
+    ingredients:
+      'Gluten-free flour blend, pumpkin purée, sugar, eggs, plant-based butter, vanilla extract, cinnamon, nutmeg, ginger, cloves, baking soda, baking powder, sea salt',
+    allergens:
+      'Eggs. Plant-based butter may contain soy. Some batches use a gluten-free flour blend containing certified gluten-free wheat starch — safe for gluten sensitivity; customers with a wheat allergy should ask before ordering.',
+  },
+  {
+    id: 'WG·B·006',
+    type: 'bakery',
+    name: 'Iced Lemon Loaf — Whole',
+    subtitle: 'whole frozen loaf',
+    specs: [
+      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Format', value: '9×5 loaf, frozen' },
+      { label: 'Sold as', value: 'Whole loaf only' },
+    ],
+    priceCents: 2000,
+    priceNote: '',
+    pricePending: false,
+    ships: true,
+    capacity: 12,
+    orderedCount: 0,
+    active: true,
+    sortOrder: 5,
+    imageNote: 'iced-lemon-loaf',
+    ingredients:
+      'Gluten-free flour blend, sugar, eggs, plant-based butter, fresh lemon juice, lemon zest, vanilla extract, baking powder, baking soda, sea salt; Glaze: powdered sugar, lemon juice',
+    allergens:
+      'Eggs. Plant-based butter may contain soy. Some batches use a gluten-free flour blend containing certified gluten-free wheat starch — safe for gluten sensitivity; customers with a wheat allergy should ask before ordering.',
+  },
+  {
+    id: 'WG·B·007',
+    type: 'bakery',
+    name: 'Pumpkin Loaf — Whole',
+    subtitle: 'whole frozen loaf',
+    specs: [
+      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Format', value: '9×5 loaf, frozen' },
+      { label: 'Sold as', value: 'Whole loaf only' },
+    ],
+    priceCents: 2000,
+    priceNote: '',
+    pricePending: false,
+    ships: true,
+    capacity: 12,
+    orderedCount: 0,
+    active: true,
+    sortOrder: 6,
     imageNote: 'pumpkin-loaf',
     ingredients:
       'Gluten-free flour blend, pumpkin purée, sugar, eggs, plant-based butter, vanilla extract, cinnamon, nutmeg, ginger, cloves, baking soda, baking powder, sea salt',
@@ -125,7 +174,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 8,
     orderedCount: 0,
     active: true,
-    sortOrder: 5,
+    sortOrder: 7,
     imageNote: 'der-smoking',
     ingredients:
       'Curated assortment of bakery items; contents vary by order. Full ingredient details for each included item are available on request and at derwintergarten.com/kitchen-record.',
@@ -149,7 +198,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 4,
     orderedCount: 0,
     active: true,
-    sortOrder: 6,
+    sortOrder: 8,
     imageNote: 'occasion-cake',
     ingredients: 'Varies by order',
     allergens: 'Eggs. Allergens vary by order; full details discussed at time of booking.',
@@ -171,7 +220,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 20,
     orderedCount: 0,
     active: true,
-    sortOrder: 7,
+    sortOrder: 9,
     imageNote: 'pothos',
     ingredients: '',
     allergens: '',
@@ -193,7 +242,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 20,
     orderedCount: 0,
     active: true,
-    sortOrder: 8,
+    sortOrder: 10,
     imageNote: 'philodendron',
     ingredients: '',
     allergens: '',
@@ -215,8 +264,30 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 20,
     orderedCount: 0,
     active: true,
-    sortOrder: 9,
+    sortOrder: 11,
     imageNote: 'zz-plant',
+    ingredients: '',
+    allergens: '',
+  },
+  {
+    id: 'WG·P·005',
+    type: 'plant',
+    name: 'Spider Plant',
+    subtitle: 'Chlorophytum comosum',
+    specs: [
+      { label: 'Light', value: 'Bright indirect; adapts to moderate light' },
+      { label: 'Water', value: 'When the top inch goes dry' },
+      { label: 'Pot size', value: '4 in' },
+    ],
+    priceCents: 1000,
+    priceNote: '',
+    pricePending: false,
+    ships: true,
+    capacity: 20,
+    orderedCount: 0,
+    active: true,
+    sortOrder: 12,
+    imageNote: 'spider-plant',
     ingredients: '',
     allergens: '',
   },
@@ -322,9 +393,7 @@ export const SEED_CARE_GUIDES: Omit<CareGuide, 'createdAt' | 'updatedAt'>[] = [
     dek: 'The same cutting behaves differently depending on where its roots end up.',
     published: true,
     sortOrder: 1,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-Golden pothos (Epipremnum aureum) is one of the few houseplants that genuinely thrives either way, but water and soil aren't interchangeable mid-life — the plant grows a different kind of root for each.
+    body: `Golden pothos (Epipremnum aureum) is one of the few houseplants that genuinely thrives either way, but water and soil aren't interchangeable mid-life — the plant grows a different kind of root for each.
 
 Roots grown in water are adapted to move oxygen differently than roots grown in soil. A cutting rooted in a jar on a windowsill can live in water indefinitely — pothos will do this for years, needing only a fresh top-off and an occasional rinse of the jar. It just grows slower than a soil-grown plant, since water alone doesn't carry much in the way of nutrients.
 
@@ -341,9 +410,7 @@ If the goal is a bigger, faster-growing plant, soil wins — pothos roots access
     dek: 'Most ZZ plant deaths are drownings, not neglect.',
     published: true,
     sortOrder: 2,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-Zamioculcas zamiifolia stores water in thick, potato-like rhizomes just under the soil line. That single fact explains almost everything about how to keep one alive.
+    body: `Zamioculcas zamiifolia stores water in thick, potato-like rhizomes just under the soil line. That single fact explains almost everything about how to keep one alive.
 
 Because the plant is carrying its own reserve, watering on a fixed weekly schedule is the most common way to kill it. A ZZ in a normal-sized pot, in an average indoor room, often only needs water once every three to five weeks — less in winter, when growth all but stops. The right test isn't the calendar, it's the soil: let it go fully dry, then water thoroughly and don't touch it again until it's dry all the way through.
 
@@ -360,9 +427,7 @@ One more thing worth knowing: every part of the plant is mildly toxic if chewed 
     dek: 'Fenestration is a light problem before it is an age problem.',
     published: true,
     sortOrder: 3,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-A young Monstera adansonii or Monstera deliciosa almost always starts with solid, unsplit leaves. That's normal, not a sign of a sick plant.
+    body: `A young Monstera adansonii or Monstera deliciosa almost always starts with solid, unsplit leaves. That's normal, not a sign of a sick plant.
 
 Split leaves — fenestration — are a response to two things: maturity and light. A cutting has to grow past its juvenile phase before it can produce fenestrated growth at all, and no amount of fertilizer speeds that up. Most indoor monsteras need several new leaves, sometimes a year or more of growth, before splitting begins.
 
@@ -381,9 +446,7 @@ If a plant is getting strong indirect light, has something to climb, and is stil
     dek: 'Where you cut matters more than what you cut with.',
     published: true,
     sortOrder: 4,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-Most rooting failures come down to one mistake: cutting in the wrong place. For vining plants like pothos and philodendron, roots only form at nodes — the small bump or aerial-root nub where a leaf attaches to the stem. A cutting with no node on it, no matter how healthy the leaf looks, will not root.
+    body: `Most rooting failures come down to one mistake: cutting in the wrong place. For vining plants like pothos and philodendron, roots only form at nodes — the small bump or aerial-root nub where a leaf attaches to the stem. A cutting with no node on it, no matter how healthy the leaf looks, will not root.
 
 The basic method: using clean, sharp scissors or snips, cut just below a node, keeping at least one leaf attached above it. Remove any leaves that would sit underwater or below the soil line — leaves left to rot in water foul it quickly and can kill the cutting before roots even form.
 
@@ -400,9 +463,7 @@ The single biggest variable is patience: check for resistance by giving the cutt
     dek: 'Forgiving without being boring, and it tells you clearly when something is wrong.',
     published: true,
     sortOrder: 5,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-Philodendrons are the plant that makes new growers feel competent and experienced growers feel understood. They are forgiving without being boring. They grow visibly, respond to good light, and tell you clearly when something is wrong — which is more than most houseplants will do.
+    body: `Philodendrons are the plant that makes new growers feel competent and experienced growers feel understood. They are forgiving without being boring. They grow visibly, respond to good light, and tell you clearly when something is wrong — which is more than most houseplants will do.
 
 The one leaving here is a heartleaf philodendron (Philodendron hederaceum), propagated from a cutting taken in this house, rooted in water, and potted into soil once the root system was ready to support it. It is already growing. Your job is not to fix it; it is to keep it going.
 
@@ -439,9 +500,7 @@ Yellow leaves usually mean overwatering. Small or pale new leaves usually mean l
     dek: 'Most houseplants want to be repotted less often than people think.',
     published: true,
     sortOrder: 6,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-The most common repotting mistake isn't technique, it's timing — moving a plant into a new pot far more often than it needs.
+    body: `The most common repotting mistake isn't technique, it's timing — moving a plant into a new pot far more often than it needs.
 
 A plant is generally ready for a larger pot when roots are visibly circling the inside of the nursery pot, growing out of the drainage hole, or when the plant needs watering unusually often because there's more root than soil left to hold moisture. Absent those signs, an annual repot isn't necessary and can do more harm than good, especially to slow growers like ZZ plants, which actually prefer being slightly snug.
 
@@ -454,13 +513,11 @@ The best time to repot most houseplants is during active growth, spring into sum
   {
     slug: 'spider-plant-babies',
     title: 'What To Do With All the Spider Plant Babies',
-    plantAccession: '',
+    plantAccession: 'WG·P·005',
     dek: 'Spiderettes are the plant doing your propagation for you.',
     published: true,
     sortOrder: 7,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-Chlorophytum comosum is one of the few houseplants that hands you fully formed baby plants without being asked. Once a spider plant matures — usually after it's slightly rootbound — it sends out long stems tipped with small plantlets, sometimes called spiderettes or pups, each one a genetic clone of the parent.
+    body: `Chlorophytum comosum is one of the few houseplants that hands you fully formed baby plants without being asked. Once a spider plant matures — usually after it's slightly rootbound — it sends out long stems tipped with small plantlets, sometimes called spiderettes or pups, each one a genetic clone of the parent.
 
 Each plantlet already has tiny root nubs at its base before it ever touches soil or water. That makes propagation close to foolproof: snip a plantlet off the stem (or leave it attached while it roots, if the stem reaches), and either set it in water until roots lengthen, or press it directly into moist potting mix. Both work; water lets you watch the process, soil skips a transplant step later.
 
@@ -475,9 +532,7 @@ Light and water needs for a new pup are the same as for the adult plant: bright 
     dek: 'The failure mode is almost always the pot, not the plant.',
     published: true,
     sortOrder: 8,
-    body: `DRAFT — voice not yet reviewed by the owner.
-
-Aloe vera is a succulent, and nearly every indoor aloe problem traces back to treating it like a leafy houseplant instead of a desert plant.
+    body: `Aloe vera is a succulent, and nearly every indoor aloe problem traces back to treating it like a leafy houseplant instead of a desert plant.
 
 The single most important factor is drainage. Aloe roots rot quickly in soil that stays wet, so it needs a fast-draining cactus or succulent mix, not standard potting soil, and a pot with a real drainage hole — no exceptions, regardless of how attractive a sealed decorative pot looks. If the only good pot is sealed, use it as a cachepot and keep the plant in a plastic nursery pot with drainage inside it.
 
