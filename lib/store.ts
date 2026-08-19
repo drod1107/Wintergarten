@@ -203,8 +203,11 @@ export async function getKitchenRecord(): Promise<KitchenRecordContent> {
   const pool = getPool();
   if (!pool) return SEED_KITCHEN_RECORD;
   const { rows } = await pool.query('select content from kitchen_record where id = 1');
-  const content = rows[0]?.content;
-  return content && Object.keys(content).length > 0 ? content : SEED_KITCHEN_RECORD;
+  const content = rows[0]?.content as Partial<KitchenRecordContent> | undefined;
+  if (!content || Object.keys(content).length === 0) return SEED_KITCHEN_RECORD;
+  // Merge with seed so any field not yet saved by the admin falls back to a
+  // non-undefined value rather than crashing a .map() call at prerender time.
+  return { ...SEED_KITCHEN_RECORD, ...content };
 }
 
 export async function setKitchenRecord(content: KitchenRecordContent): Promise<void> {
