@@ -115,6 +115,7 @@ export type OrderRecord = {
   items: OrderItem[];
   subtotalCents: number;
   chargeCents: number;
+  taxCents: number;
   wholesaleBusiness: string;
   wholesaleQty: string;
   notes: string;
