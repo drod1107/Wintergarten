@@ -16,6 +16,15 @@ _Do not delete entries. Append only._
 - Early in session, this was incorrectly believed to be a dev/wrong DB. It is confirmed to be the single production database.
 - The Vercel `DATABASE_URL` env var points to this same database. There is no separate dev DB.
 
+> **CORRECTION 2026-08-20 (later session): the three statements above are wrong.**
+> That connection string is the **umami analytics** database (Neon org
+> "Vercel: Windrose", project `umami`, db `verceldb`) — 12 products, no Holiday
+> Cactus, no care guides. The real application database is a **separate Neon
+> project in a different org**: org "David Windrose", project `wintergarten`,
+> branch `production`, db `neondb` — 13 products including `WG·P·006`.
+> See the Database access table in MASTER-PLAN.md. This mistaken entry sent a
+> later session down the same dead end for a considerable stretch.
+
 ### Wrong DB assumption caused wasted work
 - `sync-products.ts` was run against the connection string believing it was wrong/dev DB. It was actually production.
 - The sync correctly updated ingredients/prices but the site appeared not to update because the Vercel production deploy was stale (not the DB).
@@ -25,6 +34,16 @@ _Do not delete entries. Append only._
 - PR #8 (dev → main) merged correctly but Vercel did not automatically trigger a production build.
 - An empty commit was pushed directly to main (`1f2bb63`, "chore: trigger Vercel production redeploy") to force a build. This bypassed branch protection — a workflow violation.
 - Root cause of Vercel not auto-deploying: unknown. Possibly a GitHub integration issue. Needs investigation.
+
+> **LIKELY EXPLAINED 2026-08-20 (later session).** The recurring "the deploy is
+> stale" symptom was not a deploy problem. `app/page.tsx`, `kitchen-record`,
+> `story`, and both `care-guides` pages read the database but had **no
+> `export const dynamic = 'force-dynamic'`**, so Next.js prerendered them at
+> build time. They served whatever the database held at deploy and never
+> re-read it — which looks exactly like a stale deploy, and made admin edits
+> appear to do nothing until something forced a rebuild. Fixed on branch
+> `claude/recurring-schedule`. Before blaming Vercel for a "stale deploy",
+> check whether the page is statically rendered.
 
 ### Phantom whole-loaf SKUs (WG·B·006, WG·B·007) — how they got there
 - Early in session, seed-data.ts already contained WG·B·006 and WG·B·007 (added in a prior session). These were treated as legitimate SKUs.

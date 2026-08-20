@@ -9,6 +9,13 @@ import StandStatusBlock from '@/components/StandStatusBlock';
 import { getProducts, getEffectiveWindowState, getStandStatus, getCareGuides } from '@/lib/store';
 import { determinationFor } from '@/lib/determinations';
 
+// Every value on this page — the order window, stock levels, stand status,
+// announcements — is owner-editable in /admin and must reflect the database
+// on each request. Without this the page is prerendered at build time and
+// freezes whatever the database held at deploy, so admin edits and the
+// recurring schedule appear to do nothing until the next deploy.
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const [products, windowState, stand, guides] = await Promise.all([
     getProducts(),
