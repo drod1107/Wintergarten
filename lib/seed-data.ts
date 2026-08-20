@@ -294,22 +294,32 @@ export const SEED_PRODUCTS: Product[] = [
 ];
 
 export const SEED_ORDER_WINDOW: OrderWindow = {
-  status: 'open',
+  status: 'closed',
   opensAt: null,
   closesAt: null,
   pickupDays: 'Saturdays',
   notes: 'Baked Friday, collected Saturday.',
+  // Default recurring schedule: open Sunday 8AM CST, close Thursday 8PM CST.
+  // day 0 = Sunday, day 4 = Thursday (JS Date.getDay() convention).
+  schedule: [
+    { day: 0, open: '08:00', close: '23:59' },
+    { day: 4, open: '00:00', close: '20:00' },
+  ],
 };
 
 export const SEED_STAND_STATUS: StandStatus = {
+  // Farm stand does not exist yet. Master toggle off, coming-soon on.
+  enabled: false,
+  comingSoon: true,
   isOpen: false,
   hours: 'Saturdays, eight until one, or until the table is empty.',
   address: '5312 Highway H, Sullivan, MO 63080',
-  todayText: 'brownies · snickerdoodles · pothos · philodendron',
+  todayText: '',
   updatedAt: new Date().toISOString(),
   hoursDayOfWeek: 'Saturday',
   hoursOpensTime: '08:00',
   hoursClosesTime: '13:00',
+  schedule: [],
 };
 
 export const SEED_KITCHEN_RECORD: KitchenRecordContent = {

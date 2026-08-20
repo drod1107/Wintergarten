@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     closesAt: body.closesAt || null,
     pickupDays: body.pickupDays || '',
     notes: body.notes || '',
+    schedule: Array.isArray(body.schedule) ? body.schedule : [],
   });
   return NextResponse.json({ ok: true });
 }

@@ -1,37 +1,48 @@
 'use client';
 
 import { useState } from 'react';
-import type { OrderWindow } from '@/lib/types';
+import type { OrderWindow, ScheduleEntry } from '@/lib/types';
 
-function toLocalInputValue(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function buildGrid(schedule: ScheduleEntry[]): { enabled: boolean; open: string; close: string }[] {
+  return DAYS.map((_, i) => {
+    const entry = schedule.find((e) => e.day === i);
+    return entry
+      ? { enabled: true, open: entry.open, close: entry.close }
+      : { enabled: false, open: '08:00', close: '20:00' };
+  });
 }
 
 export default function WindowEditor({ initial }: { initial: OrderWindow }) {
-  const [status, setStatus] = useState(initial.status);
-  const [closesAt, setClosesAt] = useState(toLocalInputValue(initial.closesAt));
+  const [grid, setGrid] = useState(() => buildGrid(initial.schedule ?? []));
   const [pickupDays, setPickupDays] = useState(initial.pickupDays);
   const [notes, setNotes] = useState(initial.notes);
   const [msg, setMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
+  function updateRow(i: number, patch: Partial<{ enabled: boolean; open: string; close: string }>) {
+    setGrid((prev) => prev.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setMsg(null);
+    const schedule: ScheduleEntry[] = grid
+      .map((row, i) => (row.enabled ? { day: i, open: row.open, close: row.close } : null))
+      .filter((x): x is ScheduleEntry => x !== null);
     try {
       const res = await fetch('/api/admin/window', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status,
-          closesAt: closesAt ? new Date(closesAt).toISOString() : null,
+          status: 'closed',
           opensAt: null,
+          closesAt: null,
           pickupDays,
           notes,
+          schedule,
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error || 'Save failed.');
@@ -45,20 +56,54 @@ export default function WindowEditor({ initial }: { initial: OrderWindow }) {
 
   return (
     <form onSubmit={save} className="admin-card" id="window">
-      <h2>Order window</h2>
-      <div className="radio-group" role="radiogroup" aria-label="Window status" style={{ marginBottom: 16 }}>
-        {(['open', 'closed', 'scheduled'] as const).map((s) => (
-          <label key={s}>
-            <input type="radio" name="status" checked={status === s} onChange={() => setStatus(s)} />
-            {s === 'open' ? 'Open' : s === 'closed' ? 'Closed' : 'Scheduled'}
-          </label>
-        ))}
-      </div>
-      <div className="form-row">
-        <label htmlFor="closes-at">Closes at</label>
-        <input id="closes-at" type="datetime-local" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} />
-        <p className="hint">Leave blank for no automatic close time.</p>
-      </div>
+      <h2>Order window schedule</h2>
+      <p className="hint" style={{ marginBottom: 16 }}>
+        Check a day to include it. The window is open from the first checked day&apos;s open time
+        through the last checked day&apos;s close time. Repeats weekly until changed.
+      </p>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: 'left', paddingBottom: 8 }}>Day</th>
+            <th style={{ textAlign: 'left', paddingBottom: 8 }}>Open (CST)</th>
+            <th style={{ textAlign: 'left', paddingBottom: 8 }}>Close (CST)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {DAYS.map((day, i) => (
+            <tr key={day} style={{ opacity: grid[i].enabled ? 1 : 0.45 }}>
+              <td style={{ paddingBottom: 10, paddingRight: 16 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={grid[i].enabled}
+                    onChange={(e) => updateRow(i, { enabled: e.target.checked })}
+                  />
+                  {day}
+                </label>
+              </td>
+              <td style={{ paddingBottom: 10, paddingRight: 16 }}>
+                <input
+                  type="time"
+                  value={grid[i].open}
+                  disabled={!grid[i].enabled}
+                  onChange={(e) => updateRow(i, { open: e.target.value })}
+                />
+              </td>
+              <td style={{ paddingBottom: 10 }}>
+                <input
+                  type="time"
+                  value={grid[i].close}
+                  disabled={!grid[i].enabled}
+                  onChange={(e) => updateRow(i, { close: e.target.value })}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
       <div className="form-row">
         <label htmlFor="pickup-days">Pickup days (shown to customers)</label>
         <input id="pickup-days" type="text" value={pickupDays} onChange={(e) => setPickupDays(e.target.value)} />
@@ -68,7 +113,7 @@ export default function WindowEditor({ initial }: { initial: OrderWindow }) {
         <input id="window-notes" type="text" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
       <button type="submit" className="btn" disabled={saving}>
-        {saving ? 'Saving…' : 'Save window'}
+        {saving ? 'Saving\u2026' : 'Save schedule'}
       </button>
       {msg && <p className={msg.kind === 'success' ? 'status-msg-success' : 'status-msg-error'}>{msg.text}</p>}
     </form>
