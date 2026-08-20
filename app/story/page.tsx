@@ -5,6 +5,10 @@ import ProseBody from '@/components/ProseBody';
 import { getStory } from '@/lib/store';
 import { SITE_URL } from '@/lib/site';
 
+// Owner-editable content: must read the database on each request rather
+// than being frozen into the build. See app/page.tsx for the full note.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Story',
   description: 'Why Wintergarten exists.',

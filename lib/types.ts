@@ -34,15 +34,27 @@ export type Product = {
 
 export type OrderWindowStatus = 'scheduled' | 'open' | 'closed';
 
+// One entry in a recurring weekly schedule.
+// day: 0=Sunday … 6=Saturday (JS Date.getDay() convention)
+// open/close: "HH:MM" in CST (America/Chicago)
+export type ScheduleEntry = { day: number; open: string; close: string };
+
 export type OrderWindow = {
   status: OrderWindowStatus;
   opensAt: string | null;
   closesAt: string | null;
   pickupDays: string;
   notes: string;
+  // When non-empty, the recurring schedule supersedes opensAt/closesAt.
+  // The system scans forward from now to find the active or next window.
+  schedule: ScheduleEntry[];
 };
 
 export type StandStatus = {
+  // Master on/off. When false, public always shows coming-soon.
+  enabled: boolean;
+  // When true, public shows coming-soon even if enabled=true.
+  comingSoon: boolean;
   isOpen: boolean;
   hours: string;
   address: string;
@@ -53,6 +65,8 @@ export type StandStatus = {
   hoursDayOfWeek: string;
   hoursOpensTime: string; // "08:00"
   hoursClosesTime: string; // "13:00"
+  // When non-empty, the recurring schedule drives public stand hours.
+  schedule: ScheduleEntry[];
 };
 
 export type KitchenRecordContent = {

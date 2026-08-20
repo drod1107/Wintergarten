@@ -7,6 +7,11 @@ herbarium-sheet mockup.
 - **Run locally:** `npm install && npm run dev`
 - **Configure a real backend (database, Stripe, admin login):** see
   [`SETUP.md`](./SETUP.md)
+- **Production setup runbook:** see [`DEPLOY.md`](./DEPLOY.md)
+- **Active work, bug queue, and operating rules:** see
+  [`MASTER-PLAN.md`](./MASTER-PLAN.md) — the single source of truth
+- **Audit trail of past decisions and false starts:** see
+  [`HISTORY-LOG.md`](./HISTORY-LOG.md)
 - **Owner's day-to-day tasks (open/close ordering, change a price, etc.):**
   see [`HANDOVER.md`](./HANDOVER.md)
 

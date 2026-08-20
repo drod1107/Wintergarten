@@ -5,20 +5,24 @@ import Footer from '@/components/Footer';
 import { getKitchenRecord, getProducts } from '@/lib/store';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 
+// Owner-editable content: must read the database on each request rather
+// than being frozen into the build. See app/page.tsx for the full note.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Kitchen Record',
   description:
-    "What's never in this building — gluten, mammal-derived ingredients, artificial colour and flavour — plus every ingredient, allergen and cross-contact detail, ingredient by ingredient. Missouri cottage food law RSMo 196.298.",
+    "What's never in this building â€” gluten, mammal-derived ingredients, artificial colour and flavour â€” plus every ingredient, allergen and cross-contact detail, ingredient by ingredient. Missouri cottage food law RSMo 196.298.",
   alternates: { canonical: `${SITE_URL}/kitchen-record` },
   openGraph: {
-    title: `${SITE_NAME} — Kitchen Record`,
+    title: `${SITE_NAME} â€” Kitchen Record`,
     description: "What's never in this building, and the full ingredient list for every product.",
     url: `${SITE_URL}/kitchen-record`,
     type: 'article',
   },
   twitter: {
     card: 'summary',
-    title: `${SITE_NAME} — Kitchen Record`,
+    title: `${SITE_NAME} â€” Kitchen Record`,
     description: "What's never in this building, and the full ingredient list for every product.",
   },
 };
@@ -137,7 +141,7 @@ export default async function KitchenRecordPage() {
 
           <p className="no-print" style={{ marginBottom: 60 }}>
             <Link href="/order" className="btn btn-outline">
-              Ready to order →
+              Ready to order â†’
             </Link>
           </p>
         </div>

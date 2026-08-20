@@ -6,3 +6,8 @@ node_modules
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
+
+.env*.local
+
+# Unrelated project context files, not part of Wintergarten
+.handoff/
