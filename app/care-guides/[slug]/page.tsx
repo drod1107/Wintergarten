@@ -7,6 +7,10 @@ import ProseBody from '@/components/ProseBody';
 import { getCareGuide, getCareGuides, getProduct } from '@/lib/store';
 import { SITE_URL, SITE_NAME } from '@/lib/site';
 
+// Owner-editable content: must read the database on each request rather
+// than being frozen into the build. See app/page.tsx for the full note.
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
   const guides = await getCareGuides();
   return guides.map((g) => ({ slug: g.slug }));
@@ -67,7 +71,7 @@ export default async function CareGuidePage({ params }: { params: Promise<{ slug
             {isDraft && (
               <p className="placeholder-flag" style={{ maxWidth: '60ch', marginTop: 16 }}>
                 <span className="typed">Draft</span>
-                Written as a working example of this guide format — not yet reviewed in the owner&apos;s
+                Written as a working example of this guide format â€” not yet reviewed in the owner&apos;s
                 own words.
               </p>
             )}
@@ -80,7 +84,7 @@ export default async function CareGuidePage({ params }: { params: Promise<{ slug
           {relatedProduct && (
             <p style={{ margin: '40px 0 60px' }}>
               <Link href="/order" className="btn btn-outline">
-                {relatedProduct.name} is {relatedProduct.priceCents > 0 ? `$${(relatedProduct.priceCents / 100).toFixed(0)}` : 'available'} →
+                {relatedProduct.name} is {relatedProduct.priceCents > 0 ? `$${(relatedProduct.priceCents / 100).toFixed(0)}` : 'available'} â†’
               </Link>
             </p>
           )}
