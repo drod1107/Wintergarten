@@ -176,30 +176,46 @@ function isDstInChicago(d: Date): boolean {
 }
 
 // Scan forward from now through up to 14 days (two full weeks) to find
-// the next open window in the recurring schedule. Returns null if the
-// schedule is empty or produces no valid window in that range.
+// the current or next open window in the recurring schedule.
+//
+// The schedule is treated as a weekly repeating pattern. The window opens
+// on the earliest checked day at its open time and closes on the latest
+// checked day at its close time. All days in between are implicitly open.
+//
+// Example: Sun 08:00 and Thu 20:00 checked → open Sunday 8AM through
+// Thursday 8PM every week, regardless of whether Mon/Tue/Wed have entries.
+//
+// Returns { opensAt, closesAt } for the current or next window, or null if
+// the schedule is empty.
 function nextWindowFromSchedule(
   schedule: import('./types').ScheduleEntry[],
   now: Date
 ): { opensAt: Date; closesAt: Date } | null {
   if (schedule.length === 0) return null;
+
+  // Sort by day to find span endpoints.
+  const sorted = [...schedule].sort((a, b) => a.day - b.day);
+  const firstEntry = sorted[0];
+  const lastEntry = sorted[sorted.length - 1];
+
   // Numeric weekday in CST (0=Sun…6=Sat).
   const cstDow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(
     new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', weekday: 'short' }).format(now)
   );
 
-  // Sort schedule entries by day for determinism.
-  const sorted = [...schedule].sort((a, b) => a.day - b.day);
+  // Try two weeks of Sunday-anchored windows (current week and next week).
+  for (let weekOffset = -1; weekOffset <= 1; weekOffset++) {
+    // Offset from today to the Sunday of the target week.
+    const sundayOffset = weekOffset * 7 - cstDow;
+    const sunday = new Date(now.getTime() + sundayOffset * 86400000);
 
-  // Try each day offset from 0 (today) to 13 (two weeks out).
-  for (let offset = 0; offset <= 13; offset++) {
-    const candidate = new Date(now.getTime() + offset * 86400000);
-    const candidateDow = (cstDow + offset) % 7;
-    const entry = sorted.find((e) => e.day === candidateDow);
-    if (!entry) continue;
-    const opensAt = cstTimeOnDay(candidate, entry.open);
-    const closesAt = cstTimeOnDay(candidate, entry.close);
-    // Skip windows that have already closed.
+    // Build opens/closes for this week's window.
+    const opensDay = new Date(sunday.getTime() + firstEntry.day * 86400000);
+    const closesDay = new Date(sunday.getTime() + lastEntry.day * 86400000);
+    const opensAt = cstTimeOnDay(opensDay, firstEntry.open);
+    const closesAt = cstTimeOnDay(closesDay, lastEntry.close);
+
+    // Skip windows entirely in the past.
     if (closesAt.getTime() <= now.getTime()) continue;
     return { opensAt, closesAt };
   }
