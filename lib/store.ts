@@ -14,6 +14,7 @@ import type {
   OrderRecord,
   OrderWindow,
   Product,
+  ScheduleEntry,
   StandStatus,
 } from './types';
 
@@ -116,6 +117,7 @@ function rowToOrderWindow(r: any): OrderWindow {
     closesAt: r.closes_at ? new Date(r.closes_at).toISOString() : null,
     pickupDays: r.pickup_days,
     notes: r.notes,
+    schedule: Array.isArray(r.schedule) ? (r.schedule as ScheduleEntry[]) : [],
   };
 }
 
@@ -130,10 +132,10 @@ export async function setOrderWindow(w: OrderWindow): Promise<void> {
   const pool = getPool();
   if (!pool) return;
   await pool.query(
-    `insert into order_window (id, status, opens_at, closes_at, pickup_days, notes, updated_at)
-     values (1, $1, $2, $3, $4, $5, now())
-     on conflict (id) do update set status=$1, opens_at=$2, closes_at=$3, pickup_days=$4, notes=$5, updated_at=now()`,
-    [w.status, w.opensAt, w.closesAt, w.pickupDays, w.notes]
+    `insert into order_window (id, status, opens_at, closes_at, pickup_days, notes, schedule, updated_at)
+     values (1, $1, $2, $3, $4, $5, $6, now())
+     on conflict (id) do update set status=$1, opens_at=$2, closes_at=$3, pickup_days=$4, notes=$5, schedule=$6, updated_at=now()`,
+    [w.status, w.opensAt, w.closesAt, w.pickupDays, w.notes, JSON.stringify(w.schedule)]
   );
 }
 
@@ -144,8 +146,122 @@ export type EffectiveWindowState =
   | { state: 'closed'; reason: 'scheduled' | 'manually-closed' | 'time-passed'; notes: string }
   | { state: 'sold-out'; notes: string };
 
+// America/Chicago's UTC offset, in milliseconds, at a given instant.
+// Read from Intl rather than inferred from the host clock: this code runs
+// on Vercel in UTC, where any host-local DST heuristic is always wrong.
+function chicagoOffsetMs(at: Date): number {
+  const label = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    timeZoneName: 'longOffset',
+  }).format(at);
+  const m = label.match(/GMT([+-])(\d{2}):(\d{2})/);
+  if (!m) return -6 * 3600000; // CST fallback
+  const sign = m[1] === '-' ? -1 : 1;
+  return sign * (Number(m[2]) * 3600000 + Number(m[3]) * 60000);
+}
+
+// Convert an "HH:MM" wall-clock time into the UTC instant at which that
+// time occurs, on the same calendar day as `base` reckoned in Chicago.
+function cstTimeOnDay(base: Date, hhmm: string): Date {
+  const [hh, mm] = hhmm.split(':').map(Number);
+  const cst = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(base);
+  const y = Number(cst.find((p) => p.type === 'year')!.value);
+  const mo = Number(cst.find((p) => p.type === 'month')!.value);
+  const d = Number(cst.find((p) => p.type === 'day')!.value);
+
+  // Wall time treated as if UTC, then shifted back by Chicago's offset.
+  // Iterate once so a target landing on the far side of a DST boundary
+  // from `base` still resolves to the correct offset.
+  const wallAsUtc = Date.UTC(y, mo - 1, d, hh, mm);
+  let instant = wallAsUtc - chicagoOffsetMs(base);
+  instant = wallAsUtc - chicagoOffsetMs(new Date(instant));
+  return new Date(instant);
+}
+
+// Scan forward from now through up to 14 days (two full weeks) to find
+// the current or next open window in the recurring schedule.
+//
+// The schedule is treated as a weekly repeating pattern. The window opens
+// on the earliest checked day at its open time and closes on the latest
+// checked day at its close time. All days in between are implicitly open.
+//
+// Example: Sun 08:00 and Thu 20:00 checked → open Sunday 8AM through
+// Thursday 8PM every week, regardless of whether Mon/Tue/Wed have entries.
+//
+// Returns { opensAt, closesAt } for the current or next window, or null if
+// the schedule is empty. Exported for the schedule test harness.
+export function nextWindowFromSchedule(
+  schedule: import('./types').ScheduleEntry[],
+  now: Date
+): { opensAt: Date; closesAt: Date } | null {
+  if (schedule.length === 0) return null;
+
+  // Sort by day to find span endpoints.
+  const sorted = [...schedule].sort((a, b) => a.day - b.day);
+  const firstEntry = sorted[0];
+  const lastEntry = sorted[sorted.length - 1];
+
+  // Today's calendar date and weekday, both reckoned in Chicago.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+  }).formatToParts(now);
+  const y = Number(parts.find((p) => p.type === 'year')!.value);
+  const mo = Number(parts.find((p) => p.type === 'month')!.value);
+  const d = Number(parts.find((p) => p.type === 'day')!.value);
+  const cstDow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(
+    parts.find((p) => p.type === 'weekday')!.value
+  );
+
+  // Anchor day arithmetic at 12:00 UTC on today's Chicago date. Noon UTC is
+  // 06:00/07:00 in Chicago — the same calendar day either side of a DST
+  // change — so adding whole days here can never land on the wrong date.
+  const todayAnchor = Date.UTC(y, mo - 1, d, 12, 0);
+  const dayMs = 86400000;
+
+  // Try last week's, this week's, and next week's Sunday-anchored window.
+  for (let weekOffset = -1; weekOffset <= 1; weekOffset++) {
+    const sundayAnchor = todayAnchor + (weekOffset * 7 - cstDow) * dayMs;
+    const opensAt = cstTimeOnDay(new Date(sundayAnchor + firstEntry.day * dayMs), firstEntry.open);
+    const closesAt = cstTimeOnDay(new Date(sundayAnchor + lastEntry.day * dayMs), lastEntry.close);
+
+    // Skip windows entirely in the past.
+    if (closesAt.getTime() <= now.getTime()) continue;
+    return { opensAt, closesAt };
+  }
+  return null;
+}
+
 export async function getEffectiveWindowState(): Promise<EffectiveWindowState> {
   const window = await getOrderWindow();
+
+  // --- Recurring schedule path ---
+  if (window.schedule && window.schedule.length > 0) {
+    const now = new Date();
+    const next = nextWindowFromSchedule(window.schedule, now);
+    if (!next) {
+      return { state: 'closed', reason: 'scheduled', notes: window.notes };
+    }
+    const { opensAt, closesAt } = next;
+    const nowMs = now.getTime();
+    if (nowMs >= opensAt.getTime() && nowMs < closesAt.getTime()) {
+      // Currently inside a window — check sold out.
+      const products = await getProducts();
+      const orderable = products.filter((p) => isOrderable(p));
+      const soldOut =
+        orderable.length > 0 &&
+        orderable.every((p) => p.capacity !== null && p.orderedCount >= p.capacity);
+      if (soldOut) return { state: 'sold-out', notes: window.notes };
+      return { state: 'open', closesAt: closesAt.toISOString(), notes: window.notes };
+    }
+    // Between windows — closed until next open.
+    return { state: 'closed', reason: 'scheduled', notes: window.notes };
+  }
+
+  // --- Legacy single-datetime path (kept for backward compat) ---
   if (window.status === 'scheduled') {
     return { state: 'closed', reason: 'scheduled', notes: window.notes };
   }
@@ -168,6 +284,8 @@ export async function getEffectiveWindowState(): Promise<EffectiveWindowState> {
 
 function rowToStandStatus(r: any): StandStatus {
   return {
+    enabled: r.enabled ?? false,
+    comingSoon: r.coming_soon ?? true,
     isOpen: r.is_open,
     hours: r.hours,
     address: r.address,
@@ -176,6 +294,7 @@ function rowToStandStatus(r: any): StandStatus {
     hoursDayOfWeek: r.hours_day_of_week,
     hoursOpensTime: r.hours_opens_time,
     hoursClosesTime: r.hours_closes_time,
+    schedule: Array.isArray(r.schedule) ? (r.schedule as ScheduleEntry[]) : [],
   };
 }
 
@@ -190,10 +309,10 @@ export async function setStandStatus(s: Omit<StandStatus, 'updatedAt'>): Promise
   const pool = getPool();
   if (!pool) return;
   await pool.query(
-    `insert into stand_status (id, is_open, hours, address, today_text, hours_day_of_week, hours_opens_time, hours_closes_time, updated_at)
-     values (1, $1, $2, $3, $4, $5, $6, $7, now())
-     on conflict (id) do update set is_open=$1, hours=$2, address=$3, today_text=$4, hours_day_of_week=$5, hours_opens_time=$6, hours_closes_time=$7, updated_at=now()`,
-    [s.isOpen, s.hours, s.address, s.todayText, s.hoursDayOfWeek, s.hoursOpensTime, s.hoursClosesTime]
+    `insert into stand_status (id, enabled, coming_soon, is_open, hours, address, today_text, hours_day_of_week, hours_opens_time, hours_closes_time, schedule, updated_at)
+     values (1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+     on conflict (id) do update set enabled=$1, coming_soon=$2, is_open=$3, hours=$4, address=$5, today_text=$6, hours_day_of_week=$7, hours_opens_time=$8, hours_closes_time=$9, schedule=$10, updated_at=now()`,
+    [s.enabled, s.comingSoon, s.isOpen, s.hours, s.address, s.todayText, s.hoursDayOfWeek, s.hoursOpensTime, s.hoursClosesTime, JSON.stringify(s.schedule)]
   );
 }
 

@@ -9,6 +9,13 @@ import StandStatusBlock from '@/components/StandStatusBlock';
 import { getProducts, getEffectiveWindowState, getStandStatus, getCareGuides } from '@/lib/store';
 import { determinationFor } from '@/lib/determinations';
 
+// Every value on this page — the order window, stock levels, stand status,
+// announcements — is owner-editable in /admin and must reflect the database
+// on each request. Without this the page is prerendered at build time and
+// freezes whatever the database held at deploy, so admin edits and the
+// recurring schedule appear to do nothing until the next deploy.
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   const [products, windowState, stand, guides] = await Promise.all([
     getProducts(),
@@ -57,19 +64,10 @@ export default async function HomePage() {
 
             <OrderWindowBanner state={windowState} />
 
-            {stand.todayText && (
+            {stand.enabled && !stand.comingSoon && stand.todayText && (
               <div className="field-note" role="note" aria-label="Announcement">
                 <span className="typed" style={{ fontSize: '0.72rem', opacity: 0.7 }}>This weekend</span>
                 <p style={{ margin: '0.2rem 0 0' }}>{stand.todayText}</p>
-              </div>
-            )}
-
-            {!stand.isOpen && (
-              <div className="field-note field-note--stand" role="note" aria-label="Farm stand notice">
-                <span className="typed" style={{ fontSize: '0.72rem', opacity: 0.7 }}>Farm stand</span>
-                <p style={{ margin: '0.2rem 0 0' }}>
-                  Not yet open for walk-up sales. Orders by form only for now.
-                </p>
               </div>
             )}
             <div className="order-line">
