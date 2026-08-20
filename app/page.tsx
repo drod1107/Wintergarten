@@ -57,19 +57,10 @@ export default async function HomePage() {
 
             <OrderWindowBanner state={windowState} />
 
-            {stand.todayText && (
+            {stand.enabled && !stand.comingSoon && stand.todayText && (
               <div className="field-note" role="note" aria-label="Announcement">
                 <span className="typed" style={{ fontSize: '0.72rem', opacity: 0.7 }}>This weekend</span>
                 <p style={{ margin: '0.2rem 0 0' }}>{stand.todayText}</p>
-              </div>
-            )}
-
-            {!stand.isOpen && (
-              <div className="field-note field-note--stand" role="note" aria-label="Farm stand notice">
-                <span className="typed" style={{ fontSize: '0.72rem', opacity: 0.7 }}>Farm stand</span>
-                <p style={{ margin: '0.2rem 0 0' }}>
-                  Not yet open for walk-up sales. Orders by form only for now.
-                </p>
               </div>
             )}
             <div className="order-line">

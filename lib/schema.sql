@@ -120,3 +120,18 @@ insert into order_window (id, status) values (1, 'closed') on conflict (id) do n
 insert into stand_status (id) values (1) on conflict (id) do nothing;
 insert into kitchen_record (id) values (1) on conflict (id) do nothing;
 insert into story_page (id) values (1) on conflict (id) do nothing;
+
+-- Recurring schedule feature (2026-08-20)
+-- order_window: add a weekly recurring schedule stored as a JSONB array.
+-- Each element: { day: 0-6 (Sun=0), open: "HH:MM", close: "HH:MM" } in CST.
+-- When schedule is non-empty, getEffectiveWindowState() ignores opens_at/closes_at
+-- and instead scans forward from now to find the active window.
+alter table order_window add column if not exists schedule jsonb not null default '[]';
+
+-- stand_status: add enabled flag (master on/off) and coming_soon flag (public display),
+-- plus a weekly recurring schedule in the same shape as order_window.schedule.
+-- enabled=false → public shows coming-soon regardless of schedule.
+-- coming_soon=true → public shows coming-soon even if enabled=true.
+alter table stand_status add column if not exists enabled boolean not null default false;
+alter table stand_status add column if not exists coming_soon boolean not null default true;
+alter table stand_status add column if not exists schedule jsonb not null default '[]';
