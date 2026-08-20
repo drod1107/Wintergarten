@@ -140,3 +140,9 @@ alter table stand_status add column if not exists schedule jsonb not null defaul
 -- own SKU — different price, different weight — but must not get their own
 -- card on the landing page. One card per product; both formats orderable.
 alter table products add column if not exists list_on_home boolean not null default true;
+
+-- Stripe Tax (2026-08-20)
+-- Sales tax is calculated and collected by Stripe at checkout, not by this app.
+-- tax_cents records what Stripe actually collected so the order row reconciles
+-- against the charge. charge_cents is updated at webhook time to the real total.
+alter table orders add column if not exists tax_cents integer not null default 0;
