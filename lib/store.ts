@@ -1,4 +1,5 @@
 import { getPool, hasDatabase } from './db';
+import { unpackCheckoutPayload } from './checkout-metadata';
 import {
   SEED_CARE_GUIDES,
   SEED_KITCHEN_RECORD,
@@ -63,10 +64,25 @@ export async function getProducts(opts: { includeInactive?: boolean } = {}): Pro
     const products = SEED_PRODUCTS;
     return opts.includeInactive ? products : products.filter((p) => p.active);
   }
+  // Units held by someone mid-checkout are counted as already taken, so a hold
+  // reads as unavailable everywhere ordered_count is consulted -- the order
+  // form, the sold-out check, the window state -- without those callers needing
+  // to know reservations exist. Expired holds fall out of the join on their own,
+  // so a missed sweep can never keep stock off the shelf.
+  const withHolds = `
+    select p.*,
+           p.ordered_count + coalesce(r.held, 0) as ordered_count
+      from products p
+      left join (
+        select product_id, sum(qty)::int as held
+          from reservations
+         where expires_at > now()
+         group by product_id
+      ) r on r.product_id = p.id`;
   const { rows } = await pool.query(
     opts.includeInactive
-      ? 'select * from products order by sort_order asc'
-      : 'select * from products where active = true order by sort_order asc'
+      ? `${withHolds} order by p.sort_order asc`
+      : `${withHolds} where p.active = true order by p.sort_order asc`
   );
   return rows.map(rowToProduct);
 }
@@ -498,6 +514,96 @@ export async function createOrder(o: NewOrder): Promise<{ id: number }> {
     ]);
   }
   return { id: rows[0].id };
+}
+
+/**
+ * Write a paid order from its Stripe Checkout session, exactly once.
+ *
+ * The order row is not created when the customer submits the form -- only when
+ * Stripe confirms payment -- so `orders` holds real sales, never abandoned
+ * carts. Two callers race to settle the same session (the webhook and the
+ * confirmation page); the unique index on stripe_session_id makes the loser a
+ * no-op. `created` tells the winner it owns the downstream fan-out, so Zoho and
+ * Zapier see each order once and only once.
+ *
+ * Item names and prices are read from the products table here rather than taken
+ * from session metadata: metadata round-trips through the customer's browser,
+ * so it decides *what* was bought, never what it cost.
+ */
+export async function settleOrderFromSession(session: {
+  id: string;
+  amount_total: number | null;
+  total_details?: { amount_tax: number | null } | null;
+  metadata?: Record<string, string> | null;
+}): Promise<{ order: OrderRecord | null; created: boolean }> {
+  const pool = getPool();
+  if (!pool) return { order: null, created: false };
+
+  const existing = await pool.query('select * from orders where stripe_session_id = $1', [
+    session.id,
+  ]);
+  if (existing.rows[0]) return { order: rowToOrder(existing.rows[0]), created: false };
+
+  const payload = unpackCheckoutPayload(session.metadata);
+  if (!payload) return { order: null, created: false };
+
+  const products = await getProducts({ includeInactive: true });
+  const items: OrderItem[] = payload.cart
+    .map((line) => {
+      const p = products.find((pp) => pp.id === line.id);
+      return p
+        ? { id: p.id, name: p.name, qty: line.qty, priceCents: p.priceCents }
+        : null;
+    })
+    .filter((i): i is OrderItem => i !== null);
+
+  const subtotalCents = items.reduce((sum, i) => sum + i.priceCents * i.qty, 0);
+  const taxCents = session.total_details?.amount_tax ?? 0;
+  const chargeCents = session.amount_total ?? subtotalCents + taxCents;
+
+  const { rows } = await pool.query(
+    `insert into orders (kind, branch, name, email, phone, address, distance_miles, reference_point,
+       pickup_day, items, subtotal_cents, tax_cents, charge_cents, wholesale_business, wholesale_qty,
+       notes, stripe_session_id, stripe_status)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'','',$14,$15,'paid')
+     on conflict (stripe_session_id) do nothing
+     returning *`,
+    [
+      'order',
+      payload.branch,
+      payload.name,
+      payload.email,
+      payload.phone,
+      payload.address,
+      payload.distanceMiles,
+      payload.referencePoint,
+      payload.pickupDay,
+      JSON.stringify(items),
+      subtotalCents,
+      taxCents,
+      chargeCents,
+      payload.notes,
+      session.id,
+    ]
+  );
+
+  // Lost the race: the other caller inserted between our select and insert.
+  if (!rows[0]) {
+    const winner = await pool.query('select * from orders where stripe_session_id = $1', [
+      session.id,
+    ]);
+    return { order: winner.rows[0] ? rowToOrder(winner.rows[0]) : null, created: false };
+  }
+
+  // Consume batch capacity only once the sale is real.
+  for (const item of items) {
+    await pool.query('update products set ordered_count = ordered_count + $1 where id = $2', [
+      item.qty,
+      item.id,
+    ]);
+  }
+
+  return { order: rowToOrder(rows[0]), created: true };
 }
 
 export async function setOrderStripeSession(id: number, sessionId: string): Promise<void> {

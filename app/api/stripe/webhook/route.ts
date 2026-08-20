@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
-import { markOrderPaid } from '@/lib/store';
+import { settleOrderFromSession } from '@/lib/store';
+import { releaseHold } from '@/lib/reservations';
 import { buildOrderPayload, notifyZapier } from '@/lib/zapier';
 import { recordOrderInZoho } from '@/lib/zoho';
 import { notifyOwnerByEmail } from '@/lib/notify-email';
@@ -29,15 +30,17 @@ export async function POST(req: NextRequest) {
       payment_status: string;
       amount_total: number | null;
       total_details: { amount_tax: number | null } | null;
+      metadata: Record<string, string> | null;
     };
     if (session.payment_status === 'paid') {
-      // amount_total is the taxed total Stripe actually charged; the order row
-      // was written pre-tax, so settle it against these rather than leaving
-      // charge_cents understating the payment by the tax amount.
-      const order = await markOrderPaid(session.id, {
-        amountTotalCents: session.amount_total,
-        taxCents: session.total_details?.amount_tax ?? null,
-      });
+      // The order does not exist yet — this is where a sale becomes a row.
+      // settleOrderFromSession is idempotent on the session id, and `created`
+      // tells us whether we are the one that wrote it, so the fan-out below
+      // runs exactly once even though the confirmation page settles too.
+      const { order, created } = await settleOrderFromSession(session);
+      // The units were held for this session; ordered_count carries them now.
+      await releaseHold(session.id);
+      if (!created) return NextResponse.json({ received: true });
       // Fan the paid order out to Zapier when a hook URL is configured.
       // notifyZapier swallows its own failures, so a broken Zap can never
       // make us return non-2xx and have Stripe redeliver a settled payment.

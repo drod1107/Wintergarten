@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Product } from '@/lib/types';
 
 type BranchInfo =
@@ -37,6 +37,21 @@ export default function OrderForm({
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set once the server has taken a stock hold and handed back a checkout URL.
+  const [hold, setHold] = useState<{ checkoutUrl: string; expiresAt: string | null } | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+
+  // Tick the hold countdown. Driven off the server's expiry timestamp rather
+  // than a local counter, so a slow page load or a sleeping tab can't leave the
+  // customer looking at more time than they actually have.
+  useEffect(() => {
+    if (!hold?.expiresAt) return;
+    const expiry = new Date(hold.expiresAt).getTime();
+    const tick = () => setSecondsLeft(Math.max(0, Math.round((expiry - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [hold]);
 
   async function checkAddress() {
     if (address.trim().length < 5) {
@@ -145,7 +160,10 @@ export default function OrderForm({
       try { data = await res.json(); } catch { /* empty body */ }
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
       if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+        // The stock is now held for this session. Show the customer the clock
+        // they are on before handing them to Stripe, rather than dropping them
+        // onto a payment page with an invisible deadline.
+        setHold({ checkoutUrl: data.checkoutUrl, expiresAt: data.holdExpiresAt });
       } else if (data.redirect) {
         window.location.href = data.redirect;
       }
@@ -153,6 +171,39 @@ export default function OrderForm({
       setError(err.message);
       setSubmitting(false);
     }
+  }
+
+  if (hold) {
+    const mm = secondsLeft === null ? null : Math.floor(secondsLeft / 60);
+    const ss = secondsLeft === null ? null : secondsLeft % 60;
+    const lapsed = secondsLeft !== null && secondsLeft <= 0;
+    return (
+      <div className="hold-panel">
+        <span className="typed">Held for you</span>
+        <p>We&apos;ll hold your treats for up to ten minutes while you continue browsing!</p>
+        {secondsLeft !== null && !lapsed && (
+          <p className="hold-clock">
+            {mm}:{String(ss).padStart(2, '0')}
+          </p>
+        )}
+        {lapsed && <p className="hold-clock">Hold expired</p>}
+        {lapsed ? (
+          <button type="button" className="btn btn-block" onClick={() => window.location.reload()}>
+            Start again
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-block"
+            onClick={() => {
+              window.location.href = hold.checkoutUrl;
+            }}
+          >
+            Continue to payment
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -308,7 +359,7 @@ export default function OrderForm({
                     <div className="item-price">
                       ${(p.priceCents / 100).toFixed(2)}
                       {soldOut && ' · sold out this window'}
-                      {!soldOut && shipBlocked && " · doesn't ship — you'll be added to a waitlist"}
+                      {!soldOut && shipBlocked && " · we don't ship this one to your area yet"}
                     </div>
                   </div>
                   <div className="qty-input">

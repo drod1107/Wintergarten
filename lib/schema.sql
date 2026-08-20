@@ -146,3 +146,40 @@ alter table products add column if not exists list_on_home boolean not null defa
 -- tax_cents records what Stripe actually collected so the order row reconciles
 -- against the charge. charge_cents is updated at webhook time to the real total.
 alter table orders add column if not exists tax_cents integer not null default 0;
+
+-- Orders are created on payment, not on submit (2026-08-20)
+-- The row is now written when Stripe confirms payment, so `orders` contains
+-- only real sales and enquiries -- never abandoned carts. Both the webhook and
+-- the confirmation page can settle the same session, so this index makes the
+-- insert idempotent: whichever arrives first wins, the other is a no-op.
+create unique index if not exists orders_stripe_session_id_key
+  on orders (stripe_session_id)
+  where stripe_session_id is not null;
+
+-- Out-of-area orders are enquiries, not a waitlist (2026-08-20)
+-- The old 'waitlist' branch promised customers a list that does not exist.
+-- Out-of-area now files as 'enquiry' -- captured as a lead, never charged,
+-- same shape as a wholesale enquiry. 'waitlist' stays permitted so historical
+-- rows remain valid; nothing new is written with it.
+alter table orders drop constraint if exists orders_branch_check;
+alter table orders add constraint orders_branch_check
+  check (branch in ('pickup', 'shipping', 'enquiry', 'waitlist', 'n/a'));
+
+-- Stock holds during checkout (2026-08-20)
+-- Orders are only written on payment, so ordered_count no longer moves when a
+-- customer starts checkout. A hold takes the unit off the shelf for the length
+-- of the checkout window: nobody else can buy it, whether or not the holder
+-- pays. Released when the hold expires, when the customer cancels, or when the
+-- order settles (at which point ordered_count carries it instead).
+create table if not exists reservations (
+  stripe_session_id text not null,
+  product_id text not null references products(id) on delete cascade,
+  qty integer not null check (qty > 0),
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  primary key (stripe_session_id, product_id)
+);
+
+-- Availability is read on every order-page load, and the sweep filters on the
+-- same column, so both paths want this.
+create index if not exists reservations_expires_at_idx on reservations (expires_at);

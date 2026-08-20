@@ -98,7 +98,9 @@ export type CareGuide = {
 
 export type OrderItem = { id: string; name: string; qty: number; priceCents: number };
 
-export type OrderBranch = 'pickup' | 'shipping' | 'waitlist' | 'n/a';
+// 'waitlist' is retained only so historical rows still type-check. Nothing
+// new is written with it -- out-of-area now files as 'enquiry'.
+export type OrderBranch = 'pickup' | 'shipping' | 'enquiry' | 'waitlist' | 'n/a';
 
 export type OrderRecord = {
   id: number;

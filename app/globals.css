@@ -485,3 +485,13 @@ footer.site-footer nav a:hover{color:var(--rust);}
   .shell{padding:0;max-width:100%;}
   .holes{display:none;}
 }
+
+/* Stock hold panel — shown between submitting the order and paying, so the
+   customer can see the clock their held stock is on. */
+.hold-panel{background:var(--paper-2);padding:28px 20px 26px;max-width:44ch;margin:0 auto;text-align:center;}
+.hold-panel p{margin:10px 0 0;}
+.hold-panel .btn{margin-top:20px;}
+.hold-clock{
+  font-family:var(--font-display), sans-serif;font-weight:700;font-size:38px;
+  letter-spacing:.02em;margin-top:14px;
+}

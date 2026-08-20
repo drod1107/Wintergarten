@@ -5,9 +5,10 @@ import {
   getEffectiveWindowState,
   getProducts,
   isOrderable,
-  setOrderStripeSession,
 } from '@/lib/store';
 import { getStripe, isStripeConfigured } from '@/lib/stripe';
+import { holdStock, HOLD_MINUTES } from '@/lib/reservations';
+import { packCheckoutPayload, type CheckoutPayload } from '@/lib/checkout-metadata';
 import { SITE_URL } from '@/lib/site';
 import type { OrderBranch, OrderItem } from '@/lib/types';
 
@@ -127,18 +128,45 @@ export async function POST(req: NextRequest) {
   }
 
   // An item that doesn't ship, ordered from outside pickup range, is never a
-  // dead end — it becomes a waitlist entry instead of a rejection.
+  // dead end — it becomes an enquiry rather than a rejection. It is a lead, not
+  // a sale: nothing is charged, and Sir contacts them directly.
   const unshippable = branch === 'shipping' && lineItems.some((li) => {
     const p = products.find((pp) => pp.id === li.id);
     return p && !p.ships;
   });
-  if (unshippable) branch = 'waitlist';
+  if (unshippable) branch = 'enquiry';
 
   const subtotalCents = lineItems.reduce((sum, li) => sum + li.priceCents * li.qty, 0);
-  const chargeCents = branch === 'waitlist' ? 0 : subtotalCents;
 
-  const { id: orderId } = await createOrder({
-    kind: 'order',
+  // Enquiries never reach Stripe, so there is no payment event to write them
+  // later. They are recorded now, exactly like a wholesale enquiry.
+  if (branch === 'enquiry') {
+    const { id: enquiryId } = await createOrder({
+      kind: 'order',
+      branch,
+      name,
+      email,
+      phone: (body.phone || '').trim(),
+      address,
+      distanceMiles,
+      referencePoint,
+      pickupDay: (body.pickupDay || '').trim(),
+      items: lineItems,
+      subtotalCents,
+      chargeCents: 0,
+      wholesaleBusiness: '',
+      wholesaleQty: '',
+      notes: (body.notes || '').trim(),
+    });
+    return NextResponse.json({
+      redirect: `/order/confirmation?orderId=${enquiryId}&branch=${branch}`,
+    });
+  }
+
+  // From here the order is a sale, and a sale is not written until Stripe says
+  // it was paid. Everything needed to build the row travels in session metadata
+  // and comes back on the webhook; see lib/checkout-metadata.ts.
+  const payload: CheckoutPayload = {
     branch,
     name,
     email,
@@ -147,22 +175,15 @@ export async function POST(req: NextRequest) {
     distanceMiles,
     referencePoint,
     pickupDay: (body.pickupDay || '').trim(),
-    items: lineItems,
-    subtotalCents,
-    chargeCents,
-    wholesaleBusiness: '',
-    wholesaleQty: '',
     notes: (body.notes || '').trim(),
-  });
-
-  if (chargeCents === 0) {
-    return NextResponse.json({ redirect: `/order/confirmation?orderId=${orderId}&branch=${branch}` });
-  }
+    cart: lineItems.map((li) => ({ id: li.id, qty: li.qty })),
+  };
 
   if (!isStripeConfigured()) {
-    return NextResponse.json({
-      redirect: `/order/confirmation?orderId=${orderId}&branch=${branch}&payment=skipped`,
-    });
+    return NextResponse.json(
+      { error: 'Payments are not configured — please try again shortly.' },
+      { status: 503 }
+    );
   }
 
   const stripe = getStripe()!;
@@ -196,9 +217,9 @@ export async function POST(req: NextRequest) {
           product_data: { name: li.name },
         },
       })),
-      success_url: `${SITE_URL}/order/confirmation?orderId=${orderId}&branch=${branch}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${SITE_URL}/order?resume=${orderId}`,
-      metadata: { orderId: String(orderId) },
+      success_url: `${SITE_URL}/order/confirmation?branch=${branch}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}/order?canceled={CHECKOUT_SESSION_ID}`,
+      metadata: packCheckoutPayload(payload),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Payment setup failed.';
@@ -206,6 +227,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Payment setup failed — please try again.' }, { status: 502 });
   }
 
-  await setOrderStripeSession(orderId, session.id);
-  return NextResponse.json({ checkoutUrl: session.url });
+  // Take the stock off the shelf for the length of the checkout window. This
+  // runs after session creation because the hold is keyed to the session, and
+  // it re-checks capacity under a row lock, so two people cannot both be handed
+  // the last loaf. If it fails, the session is expired immediately rather than
+  // left payable against stock we cannot honour.
+  const hold = await holdStock(session.id, payload.cart);
+  if (!hold.ok) {
+    try {
+      await stripe.checkout.sessions.expire(session.id);
+    } catch {
+      // Nothing to do — an unexpirable session has already ended.
+    }
+    const names = hold.unavailable
+      .map((id) => products.find((p) => p.id === id)?.name || id)
+      .join(', ');
+    return NextResponse.json(
+      { error: `Just sold out while you were ordering: ${names}. Your card was not charged.` },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json({
+    checkoutUrl: session.url,
+    holdExpiresAt: hold.expiresAt ? hold.expiresAt.toISOString() : null,
+    holdMinutes: HOLD_MINUTES,
+  });
 }
