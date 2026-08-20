@@ -437,6 +437,7 @@ function rowToOrder(r: any): OrderRecord {
     items: r.items,
     subtotalCents: r.subtotal_cents,
     chargeCents: r.charge_cents,
+    taxCents: r.tax_cents ?? 0,
     wholesaleBusiness: r.wholesale_business,
     wholesaleQty: r.wholesale_qty,
     notes: r.notes,
@@ -508,12 +509,29 @@ export async function setOrderStripeSession(id: number, sessionId: string): Prom
 // Returns the order that was marked paid, so callers can forward it onward
 // without a second round trip. Null in demo mode, or if the session id
 // matches no order.
-export async function markOrderPaid(sessionId: string): Promise<OrderRecord | null> {
+/**
+ * Settle an order against what Stripe actually collected.
+ *
+ * Stripe Tax calculates sales tax at checkout, so the amount the customer paid
+ * is not known until the session completes. `amountTotalCents` and
+ * `taxCents` come from the completed session; when they are omitted (a session
+ * predating Stripe Tax, or a replayed webhook without them) charge_cents and
+ * tax_cents are left as they were rather than being zeroed.
+ */
+export async function markOrderPaid(
+  sessionId: string,
+  amounts?: { amountTotalCents?: number | null; taxCents?: number | null }
+): Promise<OrderRecord | null> {
   const pool = getPool();
   if (!pool) return null;
   const { rows } = await pool.query(
-    "update orders set stripe_status = 'paid', updated_at = now() where stripe_session_id = $1 returning *",
-    [sessionId]
+    `update orders set
+       stripe_status = 'paid',
+       charge_cents = coalesce($2, charge_cents),
+       tax_cents = coalesce($3, tax_cents),
+       updated_at = now()
+     where stripe_session_id = $1 returning *`,
+    [sessionId, amounts?.amountTotalCents ?? null, amounts?.taxCents ?? null]
   );
   return rows[0] ? rowToOrder(rows[0]) : null;
 }
@@ -540,6 +558,7 @@ export function ordersToCsv(orders: OrderRecord[]): string {
     'pickup_day',
     'items',
     'subtotal_cents',
+    'tax_cents',
     'charge_cents',
     'wholesale_business',
     'wholesale_qty',
@@ -567,6 +586,7 @@ export function ordersToCsv(orders: OrderRecord[]): string {
         o.pickupDay,
         JSON.stringify(o.items),
         (o.subtotalCents / 100).toFixed(2),
+        (o.taxCents / 100).toFixed(2),
         (o.chargeCents / 100).toFixed(2),
         o.wholesaleBusiness,
         o.wholesaleQty,

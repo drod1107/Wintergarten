@@ -171,11 +171,28 @@ export async function POST(req: NextRequest) {
     session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email,
+      // Sales tax is Stripe's job, not ours. Stripe Tax resolves the rate from
+      // the buyer's address and the account's product tax code, which is what
+      // keeps Missouri's reduced food rate correct as local rates change and
+      // as jurisdictions differ between pickup and delivery.
+      //
+      // Requires Stripe Tax to be enabled on the account with an origin address
+      // and a Missouri registration. Without those, session creation fails and
+      // the catch below returns "Payment setup failed" — it does not silently
+      // fall through to an untaxed charge.
+      automatic_tax: { enabled: true },
+      // automatic_tax cannot compute a rate without an address to compute it
+      // against, so Checkout has to collect one.
+      billing_address_collection: 'required',
       line_items: lineItems.map((li) => ({
         quantity: li.qty,
         price_data: {
           currency: 'usd',
           unit_amount: li.priceCents,
+          // 'exclusive' — the listed $4 slice / $20 loaf are pre-tax prices and
+          // tax is added on top. Switching this to 'inclusive' would keep the
+          // shelf price as the all-in total and take the tax out of margin.
+          tax_behavior: 'exclusive',
           product_data: { name: li.name },
         },
       })),
