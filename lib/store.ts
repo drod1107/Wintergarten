@@ -146,11 +146,24 @@ export type EffectiveWindowState =
   | { state: 'closed'; reason: 'scheduled' | 'manually-closed' | 'time-passed'; notes: string }
   | { state: 'sold-out'; notes: string };
 
-// Convert an "HH:MM" string into a Date on the same calendar day as
-// `base` (in CST / America/Chicago). Returns a UTC Date object.
+// America/Chicago's UTC offset, in milliseconds, at a given instant.
+// Read from Intl rather than inferred from the host clock: this code runs
+// on Vercel in UTC, where any host-local DST heuristic is always wrong.
+function chicagoOffsetMs(at: Date): number {
+  const label = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    timeZoneName: 'longOffset',
+  }).format(at);
+  const m = label.match(/GMT([+-])(\d{2}):(\d{2})/);
+  if (!m) return -6 * 3600000; // CST fallback
+  const sign = m[1] === '-' ? -1 : 1;
+  return sign * (Number(m[2]) * 3600000 + Number(m[3]) * 60000);
+}
+
+// Convert an "HH:MM" wall-clock time into the UTC instant at which that
+// time occurs, on the same calendar day as `base` reckoned in Chicago.
 function cstTimeOnDay(base: Date, hhmm: string): Date {
   const [hh, mm] = hhmm.split(':').map(Number);
-  // Format the date in CST to get its year/month/day components.
   const cst = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Chicago',
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -158,21 +171,14 @@ function cstTimeOnDay(base: Date, hhmm: string): Date {
   const y = Number(cst.find((p) => p.type === 'year')!.value);
   const mo = Number(cst.find((p) => p.type === 'month')!.value);
   const d = Number(cst.find((p) => p.type === 'day')!.value);
-  // Build an ISO string in CST and parse it as UTC.
-  const offsetStr = isDstInChicago(base) ? '-05:00' : '-06:00';
-  return new Date(
-    `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00${offsetStr}`
-  );
-}
 
-// Minimal DST check for America/Chicago: CDT (UTC-5) Mar second Sun → Nov first Sun.
-function isDstInChicago(d: Date): boolean {
-  const jan = new Date(d.getFullYear(), 0, 1);
-  const jul = new Date(d.getFullYear(), 6, 1);
-  const janOffset = jan.getTimezoneOffset();
-  const julOffset = jul.getTimezoneOffset();
-  // Minimum offset = DST period
-  return d.getTimezoneOffset() === Math.min(janOffset, julOffset);
+  // Wall time treated as if UTC, then shifted back by Chicago's offset.
+  // Iterate once so a target landing on the far side of a DST boundary
+  // from `base` still resolves to the correct offset.
+  const wallAsUtc = Date.UTC(y, mo - 1, d, hh, mm);
+  let instant = wallAsUtc - chicagoOffsetMs(base);
+  instant = wallAsUtc - chicagoOffsetMs(new Date(instant));
+  return new Date(instant);
 }
 
 // Scan forward from now through up to 14 days (two full weeks) to find
@@ -186,8 +192,8 @@ function isDstInChicago(d: Date): boolean {
 // Thursday 8PM every week, regardless of whether Mon/Tue/Wed have entries.
 //
 // Returns { opensAt, closesAt } for the current or next window, or null if
-// the schedule is empty.
-function nextWindowFromSchedule(
+// the schedule is empty. Exported for the schedule test harness.
+export function nextWindowFromSchedule(
   schedule: import('./types').ScheduleEntry[],
   now: Date
 ): { opensAt: Date; closesAt: Date } | null {
@@ -198,22 +204,29 @@ function nextWindowFromSchedule(
   const firstEntry = sorted[0];
   const lastEntry = sorted[sorted.length - 1];
 
-  // Numeric weekday in CST (0=Sun…6=Sat).
+  // Today's calendar date and weekday, both reckoned in Chicago.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short',
+  }).formatToParts(now);
+  const y = Number(parts.find((p) => p.type === 'year')!.value);
+  const mo = Number(parts.find((p) => p.type === 'month')!.value);
+  const d = Number(parts.find((p) => p.type === 'day')!.value);
   const cstDow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(
-    new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', weekday: 'short' }).format(now)
+    parts.find((p) => p.type === 'weekday')!.value
   );
 
-  // Try two weeks of Sunday-anchored windows (current week and next week).
-  for (let weekOffset = -1; weekOffset <= 1; weekOffset++) {
-    // Offset from today to the Sunday of the target week.
-    const sundayOffset = weekOffset * 7 - cstDow;
-    const sunday = new Date(now.getTime() + sundayOffset * 86400000);
+  // Anchor day arithmetic at 12:00 UTC on today's Chicago date. Noon UTC is
+  // 06:00/07:00 in Chicago — the same calendar day either side of a DST
+  // change — so adding whole days here can never land on the wrong date.
+  const todayAnchor = Date.UTC(y, mo - 1, d, 12, 0);
+  const dayMs = 86400000;
 
-    // Build opens/closes for this week's window.
-    const opensDay = new Date(sunday.getTime() + firstEntry.day * 86400000);
-    const closesDay = new Date(sunday.getTime() + lastEntry.day * 86400000);
-    const opensAt = cstTimeOnDay(opensDay, firstEntry.open);
-    const closesAt = cstTimeOnDay(closesDay, lastEntry.close);
+  // Try last week's, this week's, and next week's Sunday-anchored window.
+  for (let weekOffset = -1; weekOffset <= 1; weekOffset++) {
+    const sundayAnchor = todayAnchor + (weekOffset * 7 - cstDow) * dayMs;
+    const opensAt = cstTimeOnDay(new Date(sundayAnchor + firstEntry.day * dayMs), firstEntry.open);
+    const closesAt = cstTimeOnDay(new Date(sundayAnchor + lastEntry.day * dayMs), lastEntry.close);
 
     // Skip windows entirely in the past.
     if (closesAt.getTime() <= now.getTime()) continue;
