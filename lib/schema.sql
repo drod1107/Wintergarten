@@ -135,3 +135,8 @@ alter table order_window add column if not exists schedule jsonb not null defaul
 alter table stand_status add column if not exists enabled boolean not null default false;
 alter table stand_status add column if not exists coming_soon boolean not null default true;
 alter table stand_status add column if not exists schedule jsonb not null default '[]';
+
+-- Alternate formats of a product (a whole loaf alongside the slice) are their
+-- own SKU — different price, different weight — but must not get their own
+-- card on the landing page. One card per product; both formats orderable.
+alter table products add column if not exists list_on_home boolean not null default true;

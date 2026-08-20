@@ -124,32 +124,46 @@ Fix nothing without updating this file first.
 
 ### P1 — Visible errors on live public site
 
-**BUG-01: WG·B·006 and WG·B·007 are phantom SKUs — should not exist.**
-- One card per product. Iced Lemon Loaf and Pumpkin Loaf are each one product sold in two formats ($4/slice or $20/whole loaf), not two separate products.
-- Fix: deactivate WG·B·006 and WG·B·007 via admin API; update WG·B·004 and WG·B·005 specs/price note to communicate both formats on one card.
-- Status: ⬜ TODO
+**BUG-01 / BUG-04 / BUG-05 / BUG-14: one card per loaf type.**
+- Owner ruling (2026-08-20): the SKUs are correct and must exist. Every loaf
+  sells as a slice ($4) and as a whole loaf ($20); the formats differ in cost
+  and weight, so each needs its own SKU to be charged for. The error was a
+  second *card* on the landing page for a format that already had one.
+- Fix: `products.list_on_home` — WG·B·006/007 stay active and orderable but do
+  not appear in the landing grid. "From the oven" count now reflects cards.
+- Status: ✅ FIXED
 
-**BUG-06 / BUG-07: "Sold as: By the slice (see also: whole frozen loaf)" — "frozen" is fabricated.**
-- The word "frozen" was never agreed upon. It is AI-invented copy.
-- Fix: update specs on WG·B·004 and WG·B·005 to "By the slice or whole loaf — $4 / $20"
-- Status: ⬜ TODO (part of BUG-01 fix)
+**BUG-02 / BUG-03 / BUG-06 / BUG-07: the word "frozen" is fabricated copy.**
+- Never agreed by the owner. Appeared in subtitles, Format specs, and "Sold as".
+- Status: ✅ FIXED — no occurrence remains in the database or `seed-data.ts`.
 
-**BUG-08: Whole-loaf price ($20) not shown on slice card.**
-- Once whole-loaf SKUs are removed, the $20 price must appear on the slice card.
-- Status: ⬜ TODO (part of BUG-01 fix)
+**BUG-08: whole-loaf price not shown on the slice card.**
+- Status: ✅ FIXED — price note reads "/slice · $20 whole loaf", owner-approved.
 
-**BUG-09 / BUG-10: Spider Plant and Holiday Cactus SVG illustrations not rendering.**
+**BUG-09 / BUG-10: Spider Plant and Holiday Cactus SVGs not rendering.**
 - Files exist in repo and serve 200. Root cause: SVG path content may not produce visible output at rendered card size. Both SVGs need to be inspected and redrawn if needed.
 - Status: ⬜ TODO
 
-**BUG-20: Kitchen Record "Artificial Colour" states "We use only naturally derived food colorings like beet and carrot juice."**
-- Wintergarten uses no food coloring whatsoever — natural or artificial. This is fabricated AI copy.
-- Fix: update that field in admin → Kitchen Record to accurately state "No food coloring of any kind is used."
-- Status: ⬜ TODO (admin UI change, no deploy)
+**BUG-20: Kitchen Record "Artificial Colour" copy.**
+- Owner ruling (2026-08-20): the beet and carrot juice line is the owner's own
+  wording and is correct. It was wrongly deleted and has been restored.
+- Status: ✅ CLOSED — not a bug.
 
-**BUG-16: "How cross-contact is handled" section appears empty on Kitchen Record page.**
-- Content may be missing from DB. Check admin → Kitchen Record section.
-- Status: ⬜ INVESTIGATE
+**BUG-16: "How cross-contact is handled" section empty on Kitchen Record.**
+- The `crossContact` field was an empty string in the database.
+- Status: ✅ FIXED — restored to the owner's supplied statement, verbatim.
+
+**BUG-18: WG·B·006 listed on the kitchen record.**
+- The kitchen record uses `includeInactive: true`, so alternate-format SKUs
+  appear there as separate entries.
+- Status: ⬜ DECISION NEEDED FROM OWNER — same question as BUG-17/19 below.
+
+**BUG-21 / BUG-22: care guides for plants not currently sold.**
+- Owner ruling (2026-08-20): care guides are permanent and append-only. They
+  are never removed or unpublished regardless of inventory, because they exist
+  to bring in search traffic, not to mirror stock. The Monstera guide was
+  wrongly unpublished and has been restored.
+- Status: ✅ CLOSED — not a bug.
 
 ### P2 — Content cleanup
 
@@ -215,35 +229,31 @@ Fix nothing without updating this file first.
 
 ---
 
-## Database access — READ THIS BEFORE TOUCHING DATA
+## Database access
 
-There are **two Neon organizations** on this account, each with one project.
-Confusing them has cost multiple sessions.
+The application database is Neon: org **Wintergarten**, project `wintergarten`,
+branch `production`, database `neondb`. The connection string is in
+`.env.local`, and `DATABASE_URL` in Vercel points at the same database for both
+Production and Preview.
 
-| Neon org | Project | Branch | DB | What it is |
-|---|---|---|---|---|
-| **David Windrose** | `wintergarten` | `production` | `neondb` | ✅ **THE REAL APP DATABASE** |
-| Vercel: Windrose | `umami` | `main` | `verceldb` | ❌ Analytics only — NOT the app |
+Migrated to this database on 2026-08-20 from an earlier Neon project. All rows
+transferred with counts verified on both sides: 13 products, 9 care guides,
+10 orders, and the singleton rows. `scripts/migrate-to-new-db.mjs` performed it.
 
-Verify before writing: the real database has **13 products and Holiday Cactus
-(`WG·P·006`)**. The `umami`/`verceldb` database has 12 products and no Holiday
-Cactus. One query settles it:
+Two other databases have been mistaken for the application database in past
+sessions:
 
-```sql
-select count(*) from products where id like '%P%006%';  -- 1 = right DB, 0 = wrong DB
-```
-
-The connection string `postgres://default:g9ykUX8mNbli@ep-round-river-a5pzyn9u…`
-recorded in earlier notes points at the **umami/analytics** database. It is not
-production, despite HISTORY-LOG previously asserting it was.
+| Location | What it is |
+|---|---|
+| Neon org "Vercel: Windrose", project `umami`, db `verceldb` | Analytics only — not the app |
+| Neon org "David Windrose", project `wintergarten`, db `neondb` | The pre-migration app database |
 
 `DATABASE_URL` in Vercel is an encrypted secret and cannot be recovered:
-`vercel env pull` writes it blank, and the dashboard will not re-display it.
-To run SQL, use the **Neon SQL Editor** on the `wintergarten` project
-(org: David Windrose, branch: `production`). `lib/schema.sql` is idempotent.
+`vercel env pull` writes it blank and the dashboard will not re-display it.
+Use the Neon console.
 
-Preview and production share this one database, so any preview write is a
-real write.
+Preview and production share one database, so any preview write is a real
+write. `lib/schema.sql` is idempotent.
 
 ---
 

@@ -1,60 +1,97 @@
 # Operating rules for Claude sessions
 
-Read `MASTER-PLAN.md` first — it is the single source of truth for active
-work and the bug queue. `HISTORY-LOG.md` is the append-only audit trail of
-past decisions and false starts; read it before concluding anything is
-"wrong", because several dead ends are already documented there.
+Read `MASTER-PLAN.md` first — it is the single source of truth for active work
+and the bug queue. `HISTORY-LOG.md` is the append-only audit trail; read it
+before concluding anything is "wrong", because several dead ends are already
+recorded there.
+
+## Decisions are the owner's, not yours
+
+You do not make decisions. You present options and the owner chooses.
+
+- If you find yourself deciding what something should say, whether something
+  should be removed, published, renamed, or restructured — stop and ask.
+- A TODO written by a previous Claude in `MASTER-PLAN.md` is **not** an
+  instruction from the owner. Do not act on it as if it were.
+- Never write your own assessments, guesses, or opinions into `HISTORY-LOG.md`
+  or `MASTER-PLAN.md`. Only verifiable fact belongs there. If you need to
+  record a decision that did not come from the owner, that is the signal you
+  should have asked instead.
+- Do not end a response with a permission-seeking hedge about work already
+  authorised. Ask genuine blocking questions at the start, in one sentence.
 
 ## Git workflow (non-negotiable)
 
-- Feature branches only: `claude/feature-name`
-- PR to `dev`. **Never** commit or push directly to `main` or `dev`.
-- The owner merges `dev` → `main`.
-- Vercel builds every branch push automatically. No PR or merge is needed to
-  get a preview deployment.
+- All work happens on a feature branch cut from `dev`, named `claude/…`.
+- Never commit or push directly to `main` or `dev`.
+- You open the PR from the feature branch to `dev`. The owner merges it.
+- You then test `dev`'s Vercel deployment.
+- If it is good, **you author the PR from `dev` to `main`** and hand it back.
+  The owner inspects and merges that one.
+- `main` is production. The custom domain `derwintergarten.com` points at it,
+  and `main` is the repo's default branch.
 
 ## Testing changes
 
-Test locally first — `npm run dev` is a sub-second loop. Do not use the
-push → wait-for-Vercel → reload cycle for debugging; it costs minutes per
-iteration. The Vercel preview is the final gate before opening a PR, not
-the development loop.
+Test locally first. `npm run dev` starts in about a second. Do not use
+push → wait for Vercel → reload as a debugging loop; it costs minutes per
+iteration. The deployed preview is the final gate, not the dev loop.
 
-When you do check a preview, use the **branch alias**:
+Use the **branch alias**, which always tracks the latest commit on a branch:
 
 ```
-https://wintergarten-git-claude-<branch-name>-windrose.vercel.app
+https://wintergarten-git-<branch-with-slashes-as-dashes>-windrose.vercel.app
+https://wintergarten-git-dev-windrose.vercel.app
 ```
 
-Each individual deployment also gets its own immutable URL
-(`wintergarten-<hash>-windrose.vercel.app`). Those pin to one commit — if
-you grab one and keep reloading it after pushing again, you are re-testing
-stale code. This has caused wasted cycles before.
+Every individual deployment also gets its own immutable URL
+(`wintergarten-<hash>-windrose.vercel.app`). Those pin to a single commit —
+grabbing one and reloading it after pushing again means re-testing stale code.
+That mistake has cost real time in this repo.
+
+`scripts/smoke-test.mjs <url>` checks a deployment end to end.
 
 ## Database
 
-`DATABASE_URL` is set in Vercel for Production and Preview as an encrypted
-variable. It **cannot** be read back:
+The application database is Neon, in the org **Wintergarten**, branch
+`production`, database `neondb`. Its connection string is in `.env.local`.
 
-- `vercel env pull` returns it blank.
-- The Vercel dashboard does not re-display secret values once saved.
+`DATABASE_URL` in Vercel is an encrypted secret and cannot be recovered:
+`vercel env pull` writes it blank, and the dashboard does not re-display saved
+secrets. Get the string from the Neon console instead.
 
-Preview and production share the same database, so any write from a preview
-deploy or a local script hits real data. Migrations in `lib/schema.sql` are
-idempotent (`add column if not exists`) and safe to re-run.
+Preview and production share one database, so any write from a preview deploy
+or a local script hits real data.
 
-Before assuming you are connected to the wrong database, verify with a
-distinguishing query rather than by eye. Compare against what
-`https://www.derwintergarten.com` actually serves.
+`lib/schema.sql` is idempotent (`add column if not exists`) and safe to re-run.
 
-Neon supports branching, and a project can hold several branches with
-different endpoints and different data. A connection string that points at
-the right *project* may still point at the wrong *branch*.
+Two databases have been mistaken for this one in the past. Before concluding
+you are on the wrong database, run a distinguishing query rather than judging
+by eye, and compare against what `https://www.derwintergarten.com` serves.
 
 ## Content rules
 
 - Never invent product copy, ingredients, allergen statements, or prices.
-  Anything not supplied by the owner is flagged, not guessed.
+  Anything not supplied by the owner is flagged, not guessed. Fabricated copy
+  has reached production before ("frozen" loaves, "beet and carrot juice").
 - Never place personal names in generated files, code, or documents.
-- Prices and ingredients live in the database. Editing `lib/seed-data.ts`
-  alone has no effect on the live site.
+- Care guides are permanent and append-only. New ones are added; none are
+  ever removed or unpublished, regardless of what is currently in stock.
+  They exist to bring in search traffic, not to mirror inventory.
+- Product data lives in the database. Editing `lib/seed-data.ts` alone has no
+  effect on the live site.
+- Every loaf type sells in two formats: a slice and a whole loaf. Each format
+  is its own SKU because cost and weight differ. Only one card per loaf type
+  appears on the landing page — `products.list_on_home` controls that.
+
+## Rendering
+
+Any page that reads the database must declare
+`export const dynamic = 'force-dynamic'`. Without it Next.js prerenders the
+page at build time and it will not reflect admin edits until a redeploy. This
+has already caused a production incident in this repo.
+
+## Cleaning up
+
+Delete any throwaway script once it has served its purpose. Leave the working
+tree and the repo in the state you found them, apart from the work asked for.

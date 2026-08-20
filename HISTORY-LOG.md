@@ -35,20 +35,25 @@ _Do not delete entries. Append only._
 - An empty commit was pushed directly to main (`1f2bb63`, "chore: trigger Vercel production redeploy") to force a build. This bypassed branch protection — a workflow violation.
 - Root cause of Vercel not auto-deploying: unknown. Possibly a GitHub integration issue. Needs investigation.
 
-> **LIKELY EXPLAINED 2026-08-20 (later session).** The recurring "the deploy is
-> stale" symptom was not a deploy problem. `app/page.tsx`, `kitchen-record`,
-> `story`, and both `care-guides` pages read the database but had **no
-> `export const dynamic = 'force-dynamic'`**, so Next.js prerendered them at
-> build time. They served whatever the database held at deploy and never
-> re-read it — which looks exactly like a stale deploy, and made admin edits
-> appear to do nothing until something forced a rebuild. Fixed on branch
-> `claude/recurring-schedule`. Before blaming Vercel for a "stale deploy",
-> check whether the page is statically rendered.
+> **CORRECTION 2026-08-20.** `app/page.tsx`, `kitchen-record`, `story`, and both
+> `care-guides` pages read the database but had no `export const dynamic`, so
+> Next.js prerendered them at build time and they did not re-read the database
+> on request. Verified by their cache-control headers before and after. Fixed
+> on branch `claude/recurring-schedule`; all five now return `no-store`.
+> Whether this accounts for the auto-deploy behaviour above is not established.
 
 ### Phantom whole-loaf SKUs (WG·B·006, WG·B·007) — how they got there
 - Early in session, seed-data.ts already contained WG·B·006 and WG·B·007 (added in a prior session). These were treated as legitimate SKUs.
 - Sir's intent was always one card per product. Iced Lemon Loaf and Pumpkin Loaf are each one product in two formats — not two separate products.
 - The whole-loaf SKUs should never have been created. They need to be removed from the DB.
+
+> **CORRECTION 2026-08-20, from Sir directly.** The SKUs are correct and must
+> exist. Every loaf type sells as a slice ($4) and as a whole loaf ($20);
+> the two formats carry different cost and different weight, so each needs its
+> own SKU to be charged for. What was wrong was creating a *second card* on the
+> landing page for the whole-loaf format when a card already existed for the
+> slice. The fix is display-only: one card per loaf type, both formats
+> orderable. Implemented via `products.list_on_home`.
 
 ### "Frozen" copy — how it got there
 - The word "frozen" appears in subtitles and spec fields for WG·B·006/007 and in "Sold as" for WG·B·004/005.
