@@ -24,9 +24,20 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as { id: string; payment_status: string };
+    const session = event.data.object as {
+      id: string;
+      payment_status: string;
+      amount_total: number | null;
+      total_details: { amount_tax: number | null } | null;
+    };
     if (session.payment_status === 'paid') {
-      const order = await markOrderPaid(session.id);
+      // amount_total is the taxed total Stripe actually charged; the order row
+      // was written pre-tax, so settle it against these rather than leaving
+      // charge_cents understating the payment by the tax amount.
+      const order = await markOrderPaid(session.id, {
+        amountTotalCents: session.amount_total,
+        taxCents: session.total_details?.amount_tax ?? null,
+      });
       // Fan the paid order out to Zapier when a hook URL is configured.
       // notifyZapier swallows its own failures, so a broken Zap can never
       // make us return non-2xx and have Stripe redeliver a settled payment.
