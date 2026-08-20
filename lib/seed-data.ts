@@ -338,7 +338,7 @@ export const SEED_STAND_STATUS: StandStatus = {
 
 export const SEED_KITCHEN_RECORD: KitchenRecordContent = {
   neverInBuilding: [
-    { label: 'Gluten', detail: 'Never on the premises.', placeholder: false },
+    { label: 'Gluten', detail: 'All contamination risks are certified gluten-free.', placeholder: false },
     {
       label: 'Mammal',
       detail: 'No dairy, gelatin, tallow, or rendered fat of any kind, ever.',
