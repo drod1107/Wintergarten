@@ -94,7 +94,7 @@ export default async function AdminDashboardPage() {
                   <tbody>
                     {orders.slice(0, 25).map((o) => (
                       <tr key={o.id}>
-                        <td>{new Date(o.createdAt).toLocaleDateString()}</td>
+                        <td>{new Date(o.createdAt).toLocaleDateString('en-US', { timeZone: 'America/Chicago' })}</td>
                         <td>{o.name}</td>
                         <td>{o.kind}</td>
                         <td>{o.branch}</td>

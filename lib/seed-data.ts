@@ -31,6 +31,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 40,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 1,
     imageNote: 'brownie',
     ingredients:
@@ -55,6 +56,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 60,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 2,
     imageNote: 'snickerdoodle',
     ingredients:
@@ -69,15 +71,16 @@ export const SEED_PRODUCTS: Product[] = [
     specs: [
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
       { label: 'Format', value: '9×5 loaf' },
-      { label: 'Sold as', value: 'By the slice (see also: whole frozen loaf)' },
+      { label: 'Sold as', value: 'By the slice, or a whole loaf' },
     ],
-    priceCents: 425,
-    priceNote: '/slice',
+    priceCents: 400,
+    priceNote: '/slice · $20 whole loaf',
     pricePending: false,
     ships: true,
     capacity: 24,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 3,
     imageNote: 'iced-lemon-loaf',
     ingredients:
@@ -93,15 +96,16 @@ export const SEED_PRODUCTS: Product[] = [
     specs: [
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
       { label: 'Format', value: '9×5 loaf' },
-      { label: 'Sold as', value: 'By the slice (see also: whole frozen loaf)' },
+      { label: 'Sold as', value: 'By the slice, or a whole loaf' },
     ],
-    priceCents: 425,
-    priceNote: '/slice',
+    priceCents: 400,
+    priceNote: '/slice · $20 whole loaf',
     pricePending: false,
     ships: true,
     capacity: 24,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 4,
     imageNote: 'pumpkin-loaf',
     ingredients:
@@ -113,10 +117,10 @@ export const SEED_PRODUCTS: Product[] = [
     id: 'WG·B·006',
     type: 'bakery',
     name: 'Iced Lemon Loaf — Whole',
-    subtitle: 'whole frozen loaf',
+    subtitle: 'whole loaf',
     specs: [
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
-      { label: 'Format', value: '9×5 loaf, frozen' },
+      { label: 'Format', value: '9×5 loaf' },
       { label: 'Sold as', value: 'Whole loaf only' },
     ],
     priceCents: 2000,
@@ -126,6 +130,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 12,
     orderedCount: 0,
     active: true,
+    listOnHome: false, // own SKU, but no second card on the landing page
     sortOrder: 5,
     imageNote: 'iced-lemon-loaf',
     ingredients:
@@ -137,10 +142,10 @@ export const SEED_PRODUCTS: Product[] = [
     id: 'WG·B·007',
     type: 'bakery',
     name: 'Pumpkin Loaf — Whole',
-    subtitle: 'whole frozen loaf',
+    subtitle: 'whole loaf',
     specs: [
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
-      { label: 'Format', value: '9×5 loaf, frozen' },
+      { label: 'Format', value: '9×5 loaf' },
       { label: 'Sold as', value: 'Whole loaf only' },
     ],
     priceCents: 2000,
@@ -150,6 +155,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 12,
     orderedCount: 0,
     active: true,
+    listOnHome: false, // own SKU, but no second card on the landing page
     sortOrder: 6,
     imageNote: 'pumpkin-loaf',
     ingredients:
@@ -174,6 +180,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 8,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 7,
     imageNote: 'der-smoking',
     ingredients:
@@ -198,6 +205,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 4,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 8,
     imageNote: 'occasion-cake',
     ingredients: 'Varies by order',
@@ -220,6 +228,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 20,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 9,
     imageNote: 'pothos',
     ingredients: '',
@@ -242,6 +251,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 20,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 10,
     imageNote: 'philodendron',
     ingredients: '',
@@ -264,6 +274,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 20,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 11,
     imageNote: 'zz-plant',
     ingredients: '',
@@ -286,6 +297,7 @@ export const SEED_PRODUCTS: Product[] = [
     capacity: 20,
     orderedCount: 0,
     active: true,
+    listOnHome: true,
     sortOrder: 12,
     imageNote: 'spider-plant',
     ingredients: '',
@@ -294,22 +306,34 @@ export const SEED_PRODUCTS: Product[] = [
 ];
 
 export const SEED_ORDER_WINDOW: OrderWindow = {
-  status: 'open',
+  status: 'closed',
   opensAt: null,
   closesAt: null,
   pickupDays: 'Saturdays',
   notes: 'Baked Friday, collected Saturday.',
+  // Default recurring schedule: open Sunday 8AM CST through Thursday 8PM CST.
+  // The span logic in getEffectiveWindowState treats this as a single
+  // continuous window from the earliest to latest checked day.
+  // day 0 = Sunday, day 4 = Thursday (JS Date.getDay() convention).
+  schedule: [
+    { day: 0, open: '08:00', close: '23:59' },
+    { day: 4, open: '00:00', close: '20:00' },
+  ],
 };
 
 export const SEED_STAND_STATUS: StandStatus = {
+  // Farm stand does not exist yet. Master toggle off, coming-soon on.
+  enabled: false,
+  comingSoon: true,
   isOpen: false,
   hours: 'Saturdays, eight until one, or until the table is empty.',
   address: '5312 Highway H, Sullivan, MO 63080',
-  todayText: 'brownies · snickerdoodles · pothos · philodendron',
+  todayText: '',
   updatedAt: new Date().toISOString(),
   hoursDayOfWeek: 'Saturday',
   hoursOpensTime: '08:00',
   hoursClosesTime: '13:00',
+  schedule: [],
 };
 
 export const SEED_KITCHEN_RECORD: KitchenRecordContent = {

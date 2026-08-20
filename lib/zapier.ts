@@ -21,6 +21,10 @@ export type ZapierOrderPayload = {
   address: string;
   items: { name: string; qty: number; priceEach: string; lineTotal: string }[];
   itemsSummary: string;
+  subtotal: string;
+  subtotalCents: number;
+  tax: string;
+  taxCents: number;
   total: string;
   totalCents: number;
   currency: 'usd';
@@ -47,6 +51,12 @@ export function buildOrderPayload(order: OrderRecord): ZapierOrderPayload {
     // Zapier's simpler actions (a text message, a spreadsheet cell) can't
     // walk an array, so ship a flat summary alongside the structured items.
     itemsSummary: order.items.map((i) => `${i.qty} × ${i.name}`).join(', '),
+    // Broken out so bookkeeping can post the tax line separately — chargeCents
+    // is the taxed total Stripe collected, not the sum of the item prices.
+    subtotal: money(order.subtotalCents),
+    subtotalCents: order.subtotalCents,
+    tax: money(order.taxCents),
+    taxCents: order.taxCents,
     total: money(order.chargeCents),
     totalCents: order.chargeCents,
     currency: 'usd',

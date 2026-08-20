@@ -85,13 +85,12 @@ rows are left alone, missing columns are added, and the two withdrawn
 products (Angel Food Cupcake, Swiss Cheese Monstera) are removed if an
 earlier seed created them.
 
-Alternatively, run it from the Vercel CLI without handling the string
-yourself:
-
-```
-npx vercel env pull .env.local
-npm run seed
-```
+> **Note:** `npx vercel env pull` does **not** work for this. `DATABASE_URL`
+> is stored as an encrypted secret, so the pull writes `DATABASE_URL=""` and
+> any script run against it silently falls back to `localhost:5432`. The
+> Vercel dashboard also will not re-display the value once saved. Get the
+> connection string from the database provider's own console instead, and
+> confirm you are on the correct branch/endpoint before running anything.
 
 ## 6. Domain
 
