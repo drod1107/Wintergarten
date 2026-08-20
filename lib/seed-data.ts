@@ -299,7 +299,9 @@ export const SEED_ORDER_WINDOW: OrderWindow = {
   closesAt: null,
   pickupDays: 'Saturdays',
   notes: 'Baked Friday, collected Saturday.',
-  // Default recurring schedule: open Sunday 8AM CST, close Thursday 8PM CST.
+  // Default recurring schedule: open Sunday 8AM CST through Thursday 8PM CST.
+  // The span logic in getEffectiveWindowState treats this as a single
+  // continuous window from the earliest to latest checked day.
   // day 0 = Sunday, day 4 = Thursday (JS Date.getDay() convention).
   schedule: [
     { day: 0, open: '08:00', close: '23:59' },

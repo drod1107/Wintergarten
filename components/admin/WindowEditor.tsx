@@ -58,8 +58,10 @@ export default function WindowEditor({ initial }: { initial: OrderWindow }) {
     <form onSubmit={save} className="admin-card" id="window">
       <h2>Order window schedule</h2>
       <p className="hint" style={{ marginBottom: 16 }}>
-        Check a day to include it. The window is open from the first checked day&apos;s open time
-        through the last checked day&apos;s close time. Repeats weekly until changed.
+        Check any days to define the recurring window. The window opens on the <strong>earliest</strong> checked
+        day at its open time and closes on the <strong>latest</strong> checked day at its close time — all days
+        in between are implicitly open. Example: check Sunday (open 8AM) and Thursday (close 8PM) to get a
+        Sun–Thu window with no other days needed. Repeats weekly until changed.
       </p>
 
       <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
