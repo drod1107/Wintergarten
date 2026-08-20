@@ -86,8 +86,25 @@ _A fresh Claude instance should be able to read this file and execute without an
 9. [x] Update `components/StandStatusBlock.tsx` — coming-soon mode when !enabled || comingSoon
 10. [x] Update `app/page.tsx` — announcement banner only when stand enabled and not comingSoon
 11. [x] Update `/api/admin/window` route — passes schedule field through
-12. [ ] Test on Vercel preview URL — **NEXT ACTION**
-13. [ ] Open PR to dev
+12. [x] Test on Vercel preview URL — verified: `Orders open · Closing Thu, Aug 20, 8 PM`, stand `Coming soon`
+13. [x] Open PR to dev
+
+**Additional fixes made while completing this feature:**
+- **Static-rendering defect (the real blocker).** `app/page.tsx`,
+  `kitchen-record`, `story` and both `care-guides` pages read the DB but
+  declared no rendering mode, so Next.js prerendered them at build time and
+  they never re-read the database. This is why admin edits appeared to do
+  nothing until a redeploy, and it masked the recurring schedule entirely.
+  All five now `export const dynamic = 'force-dynamic'`.
+- **Timezone defect.** `OrderWindowBanner` formatted the close time with no
+  `timeZone`, so server rendering in UTC published "Closing Fri, Aug 21, 1 AM"
+  for a window closing Thu 8 PM Central. Fixed, plus the admin orders table.
+- **DST defect.** The schedule scanner inferred DST from the *host* clock,
+  which on Vercel (UTC) is always wrong — it would have hardcoded CDT and put
+  every open/close an hour off from November to March. Now reads the real
+  America/Chicago offset from `Intl`.
+- `scripts/test-schedule.ts` — 21 assertions across the week in CDT and CST
+  plus the March DST transition. Run with `npx tsx scripts/test-schedule.ts`.
 
 **Update this file after each step is completed.**
 
@@ -101,9 +118,9 @@ Fix nothing without updating this file first.
 ### P0 — Blocking orders (fix immediately after recurring-schedule feature)
 
 **BUG-13 / BUG-15: Order window shows closed — customers cannot order.**
-- Root cause: recurring schedule feature will fix this permanently
-- Interim workaround if needed: set window to "Open" manually via admin API until recurring schedule is built
-- Status: ⬜ Will be resolved by recurring-schedule feature
+- Root cause was twofold: no recurring schedule, *and* the homepage was
+  statically prerendered so it could never reflect a window change anyway.
+- Status: ✅ FIXED on `claude/recurring-schedule` — pending merge to dev/main
 
 ### P1 — Visible errors on live public site
 
