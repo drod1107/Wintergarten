@@ -24,8 +24,11 @@ export default async function HomePage() {
     getCareGuides(),
   ]);
 
-  const bakery = products.filter((p) => p.type === 'bakery' || p.type === 'reservat');
-  const plants = products.filter((p) => p.type === 'plant');
+  // One card per product. Alternate formats (the whole loaf alongside the
+  // slice) are their own SKU and stay orderable, but do not get a second card.
+  const listed = products.filter((p) => p.listOnHome);
+  const bakery = listed.filter((p) => p.type === 'bakery' || p.type === 'reservat');
+  const plants = listed.filter((p) => p.type === 'plant');
 
   return (
     <>

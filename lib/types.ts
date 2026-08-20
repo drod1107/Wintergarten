@@ -26,6 +26,10 @@ export type Product = {
   capacity: number | null;
   orderedCount: number;
   active: boolean;
+  // Alternate formats (a whole loaf alongside the slice) are their own SKU —
+  // different price and weight — but do not get their own card on the landing
+  // page. One card per product; both formats remain orderable.
+  listOnHome: boolean;
   sortOrder: number;
   imageNote: string;
   ingredients: string;

@@ -49,6 +49,7 @@ function rowToProduct(r: any): Product {
     capacity: r.capacity,
     orderedCount: r.ordered_count,
     active: r.active,
+    listOnHome: r.list_on_home ?? true,
     sortOrder: r.sort_order,
     imageNote: r.image_note,
     ingredients: r.ingredients,
@@ -81,12 +82,12 @@ export async function upsertProduct(p: Product): Promise<void> {
   const pool = getPool();
   if (!pool) return; // demo mode: accepted, not persisted
   await pool.query(
-    `insert into products (id, type, name, subtitle, specs, price_cents, price_note, price_pending, ships, capacity, ordered_count, active, sort_order, image_note, ingredients, allergens, updated_at)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16, now())
+    `insert into products (id, type, name, subtitle, specs, price_cents, price_note, price_pending, ships, capacity, ordered_count, active, list_on_home, sort_order, image_note, ingredients, allergens, updated_at)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17, now())
      on conflict (id) do update set
        type=$2, name=$3, subtitle=$4, specs=$5, price_cents=$6, price_note=$7, price_pending=$8,
-       ships=$9, capacity=$10, ordered_count=$11, active=$12, sort_order=$13, image_note=$14,
-       ingredients=$15, allergens=$16, updated_at=now()`,
+       ships=$9, capacity=$10, ordered_count=$11, active=$12, list_on_home=$13, sort_order=$14, image_note=$15,
+       ingredients=$16, allergens=$17, updated_at=now()`,
     [
       p.id,
       p.type,
@@ -100,6 +101,7 @@ export async function upsertProduct(p: Product): Promise<void> {
       p.capacity,
       p.orderedCount,
       p.active,
+      p.listOnHome,
       p.sortOrder,
       p.imageNote,
       p.ingredients,
