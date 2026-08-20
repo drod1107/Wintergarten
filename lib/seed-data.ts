@@ -21,7 +21,7 @@ export const SEED_PRODUCTS: Product[] = [
     specs: [
       { label: 'Eats like', value: "The pan your grandmother didn't cut evenly." },
       { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
-      { label: 'Cut', value: '9×13, cut 3×4 — 24 per batch' },
+      { label: 'Cut', value: '9×13, cut 3×4 — 16 per two-pan session' },
       { label: 'Keeps', value: '4 days, sealed' },
     ],
     priceCents: 400,
