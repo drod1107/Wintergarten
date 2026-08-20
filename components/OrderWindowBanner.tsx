@@ -1,14 +1,25 @@
 import Link from 'next/link';
 import type { EffectiveWindowState } from '@/lib/store';
 
+// Rendered on the server, which runs in UTC. Without an explicit timeZone
+// a 8PM Central close renders as "1 AM" the next day — the wrong deadline
+// for every customer. The bakery's clock is the only one that matters here.
 function formatClosesAt(iso: string) {
   const d = new Date(iso);
+  const showMinutes =
+    Number(
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Chicago',
+        minute: 'numeric',
+      }).format(d)
+    ) !== 0;
   return d.toLocaleString('en-US', {
+    timeZone: 'America/Chicago',
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
-    minute: d.getMinutes() === 0 ? undefined : '2-digit',
+    minute: showMinutes ? '2-digit' : undefined,
   });
 }
 
