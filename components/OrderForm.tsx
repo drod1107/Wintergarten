@@ -342,10 +342,14 @@ export default function OrderForm({
                 </div>
               );
             })}
+            {/* This figure is pre-tax. Stripe calculates sales tax at checkout
+                from the buyer's address, so it cannot be shown here. Labelling
+                it "Total" would understate what the customer is about to pay. */}
             <div className="order-total">
-              <span className="typed">Total</span>
+              <span className="typed">Subtotal</span>
               <span className="amount">${(subtotalCents / 100).toFixed(2)}</span>
             </div>
+            <p className="tax-note">Sales tax calculated at checkout.</p>
 
             {byArrangement.length > 0 && (
               <div className="branch-banner" style={{ marginTop: 18 }}>

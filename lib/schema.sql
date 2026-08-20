@@ -120,3 +120,29 @@ insert into order_window (id, status) values (1, 'closed') on conflict (id) do n
 insert into stand_status (id) values (1) on conflict (id) do nothing;
 insert into kitchen_record (id) values (1) on conflict (id) do nothing;
 insert into story_page (id) values (1) on conflict (id) do nothing;
+
+-- Recurring schedule feature (2026-08-20)
+-- order_window: add a weekly recurring schedule stored as a JSONB array.
+-- Each element: { day: 0-6 (Sun=0), open: "HH:MM", close: "HH:MM" } in CST.
+-- When schedule is non-empty, getEffectiveWindowState() ignores opens_at/closes_at
+-- and instead scans forward from now to find the active window.
+alter table order_window add column if not exists schedule jsonb not null default '[]';
+
+-- stand_status: add enabled flag (master on/off) and coming_soon flag (public display),
+-- plus a weekly recurring schedule in the same shape as order_window.schedule.
+-- enabled=false → public shows coming-soon regardless of schedule.
+-- coming_soon=true → public shows coming-soon even if enabled=true.
+alter table stand_status add column if not exists enabled boolean not null default false;
+alter table stand_status add column if not exists coming_soon boolean not null default true;
+alter table stand_status add column if not exists schedule jsonb not null default '[]';
+
+-- Alternate formats of a product (a whole loaf alongside the slice) are their
+-- own SKU — different price, different weight — but must not get their own
+-- card on the landing page. One card per product; both formats orderable.
+alter table products add column if not exists list_on_home boolean not null default true;
+
+-- Stripe Tax (2026-08-20)
+-- Sales tax is calculated and collected by Stripe at checkout, not by this app.
+-- tax_cents records what Stripe actually collected so the order row reconciles
+-- against the charge. charge_cents is updated at webhook time to the real total.
+alter table orders add column if not exists tax_cents integer not null default 0;
