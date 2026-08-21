@@ -21,7 +21,13 @@ function headline(payload: ZapierOrderPayload): string {
   if (payload.orderKind === 'arrangement') return `Arrangement request #${payload.orderId}`;
   if (payload.branchIsWaitlist) return `Waitlist order #${payload.orderId} — nothing charged`;
   if (payload.event === 'order.paid') return `Order #${payload.orderId} paid — $${payload.total}`;
-  return `Order #${payload.orderId} placed — $${payload.total} (payment not yet confirmed)`;
+
+  // This used to read "Order #N placed — $X (payment not yet confirmed)", which
+  // is the exact thing the paid-only rule exists to stop: an unpaid attempt
+  // landing in the owner's inbox looking like a sale. A sale is announced only
+  // from the Stripe webhook now, so nothing paid reaches this line — and what
+  // does reach it must not describe itself as an order. See issue #22.
+  return `Enquiry #${payload.orderId} — nothing charged`;
 }
 
 // Never throws, so a mail provider outage cannot take down an order
