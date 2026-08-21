@@ -496,6 +496,11 @@ export async function createOrder(o: NewOrder): Promise<{ id: number; order: Ord
       o.notes,
     ]
   );
+  // Snapshot of the orders row as inserted, taken before the capacity
+  // reservation below runs. It carries no product state — ordered_count and
+  // capacity live on `products`, and OrderRecord has neither — so it cannot go
+  // stale in that respect. Do not add product columns to it later expecting
+  // post-reservation counts; re-read `products` for those.
   const created = rowToOrder(rows[0]);
   // Reserve capacity immediately so concurrent orders can't oversell a batch.
   if (o.reserveCapacity === false) return { id: created.id, order: created };
@@ -576,6 +581,28 @@ export async function claimOrderNotification(orderId: number): Promise<boolean> 
       err
     );
     return true;
+  }
+}
+
+/**
+ * Give the claim back, so the order can be notified again later.
+ *
+ * Called when a claim produced no successful delivery. Holding a claim that
+ * never resulted in a notification would recreate, in a narrower form, exactly
+ * the bug this whole change exists to fix: an order that writes a row and then
+ * goes permanently silent, unretryable by anything. A duplicate notification is
+ * a nuisance; a silent order is a lost sale. Bias to the nuisance.
+ *
+ * `notified_at is null` is therefore also the query for "orders that still need
+ * telling someone about".
+ */
+export async function releaseOrderNotification(orderId: number): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    await pool.query('update orders set notified_at = null where id = $1', [orderId]);
+  } catch (err) {
+    console.error(`[notify] could not release the notification claim on order ${orderId}:`, err);
   }
 }
 

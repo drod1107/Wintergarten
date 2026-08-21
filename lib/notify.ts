@@ -1,5 +1,5 @@
 import type { NotifyChannel, NotifyResult, OrderRecord } from './types';
-import { claimOrderNotification } from './store';
+import { claimOrderNotification, releaseOrderNotification } from './store';
 import { buildOrderPayload, notifyZapier, type ZapierOrderEvent } from './zapier';
 import { notifyOwnerByEmail } from './notify-email';
 import { recordOrderInZoho } from './zoho';
@@ -25,11 +25,30 @@ import { recordOrderInZoho } from './zoho';
 
 const CHANNELS: NotifyChannel[] = ['zapier', 'email', 'zoho'];
 
-// A hard ceiling on how long a customer waits for integrations they cannot see.
-// Each individual fanout already caps its own HTTP calls at 8s, but Zoho makes
-// up to three of them in sequence, which would otherwise put ~24s between
-// pressing Order and being redirected. Overrunning is logged, not swallowed.
-const FANOUT_BUDGET_MS = 8000;
+// A ceiling on how long a caller waits for integrations it cannot see. Each
+// fanout caps its own HTTP calls at 8s, but Zoho makes up to three in sequence,
+// so a pathological Zoho could otherwise hold a request for ~24s.
+//
+// Deliberately above the 8s per-call ceiling rather than equal to it: at 8s the
+// budget would race the per-call timeout and fire spuriously every time a single
+// channel used its full allowance. At 10s it only fires when something is
+// genuinely pathological. Overrunning is logged, never swallowed.
+const FANOUT_BUDGET_MS = 10_000;
+
+// A claim is worth keeping only if something actually got delivered.
+//
+//   * any 'ok'                 -> keep the claim. Something went out; sending it
+//                                 again would be the duplicate we are avoiding.
+//   * no 'ok', some 'failed'   -> release. Nothing was delivered and the failure
+//                                 is the retryable kind.
+//   * everything 'skipped'     -> keep. Nothing was delivered, but nothing is
+//                                 configured either, so there is nothing to
+//                                 retry and releasing would just churn the row
+//                                 on every redelivery.
+function deliveredSomething(results: NotifyResult[]): boolean {
+  if (results.some((r) => r.status === 'ok')) return true;
+  return !results.some((r) => r.status === 'failed');
+}
 
 /**
  * Fan an order out to Zapier, the owner's email and Zoho, once and once only.
@@ -71,15 +90,32 @@ export async function notifyNewOrder(
   ]);
 
   if (raced === timedOut) {
+    // Release the claim now rather than holding it on a guess.
+    //
+    // At this point the outcome is genuinely unknown, and the two mistakes are
+    // not symmetrical. Holding a claim that turns out to have delivered nothing
+    // strands the order permanently, unretryable — the bug this change exists to
+    // fix. Releasing one that turns out to have delivered leaves a row looking
+    // un-notified, which costs a duplicate only if something later retries it.
+    //
+    // The late drain below then corrects the record either way: if a slow but
+    // working integration does land, it re-claims, so a subsequent redelivery or
+    // sweep will not send twice. If the process is frozen by the runtime before
+    // that runs, the row stays released — visible as needing attention, which is
+    // the side to fail on.
+    await releaseOrderNotification(order.id);
     console.error(
       `[notify] order ${order.id} (${order.kind}/${order.branch}): fanout exceeded ${FANOUT_BUDGET_MS}ms — ` +
-        'released the request without a result. The calls may still complete; check the integrations.'
+        'claim released, outcome unknown. The calls may still complete; watch for a "(late)" line.'
     );
-    // Keep draining in the background so a slow-but-working integration still
-    // lands, and still log what it eventually said.
-    void work.then((settled) => {
-      for (const r of toResults(settled)) {
+    void work.then(async (settled) => {
+      const late = toResults(settled);
+      for (const r of late) {
         console.error(`[notify] order ${order.id} (late): ${r.channel}=${r.status} ${r.detail ?? ''}`.trim());
+      }
+      if (deliveredSomething(late)) {
+        await claimOrderNotification(order.id);
+        console.log(`[notify] order ${order.id} (late): delivered after all — claim re-taken`);
       }
     });
     return CHANNELS.map((channel) => ({
@@ -95,6 +131,15 @@ export async function notifyNewOrder(
     if (r.status === 'failed') {
       console.error(`[notify] order ${order.id}: ${r.channel} FAILED — ${r.detail ?? 'no detail given'}`);
     }
+  }
+
+  // Nothing got through and something is retryable: hand the claim back so this
+  // order is not stranded as permanently notified.
+  if (!deliveredSomething(results)) {
+    await releaseOrderNotification(order.id);
+    console.error(
+      `[notify] order ${order.id}: nothing was delivered — claim released, order can be notified again`
+    );
   }
 
   const summary = results.map((r) => `${r.channel}=${r.status}`).join(' ');
