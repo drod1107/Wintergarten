@@ -421,7 +421,7 @@ export default function OrderForm({
           <h2>What to arrange</h2>
           <p className="section-note">
             These are booked by conversation, not bought from the cart. Nothing is charged here —
-            we come back to you with the details and take payment once it is settled. Send this on
+            we get back to you with the details and take payment once it is settled. Send this on
             its own; nothing else has to be in the order.
           </p>
           <div className="radio-group" role="group" aria-label="Items to arrange">
@@ -449,7 +449,7 @@ export default function OrderForm({
             <label htmlFor="of-notes-a">What you have in mind</label>
             <textarea
               id="of-notes-a"
-              placeholder="Date needed, size, flavour, how many, anything else"
+              placeholder="Date needed, size, flavor, how many, anything else"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />

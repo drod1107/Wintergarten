@@ -41,7 +41,7 @@ export default async function OrderConfirmationPage({
     body = "We'll be in touch about wholesale within a couple of days.";
   } else if (kind === 'arrangement') {
     heading = 'Request received';
-    body = "Nothing has been charged. We'll come back to you to settle the details, and take payment once it's agreed.";
+    body = "Nothing has been charged. We'll get back to you to settle the details, and take payment once it's agreed.";
   } else if (branch === 'waitlist') {
     heading = "You're on the list";
     body = "We don't ship this item to your area yet — we'll reach out the moment that changes.";

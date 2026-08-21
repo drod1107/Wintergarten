@@ -5,7 +5,7 @@
       <feDisplacementMap in="SourceGraphic" in2="n" scale="1.7" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </defs>
-  <g filter="url(#p6)" stroke="#20261C" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+  <g filter="url(#p6)" stroke="#1A2117" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
     <path d="M30 66h40v-16H30zM36 50h28V36H36z"/>
     <path d="M30 56h40M36 42h28" stroke-width=".7" opacity=".6"/>
     <path d="M30 50c4 2.5 8 2.5 12 0s8-2.5 12 0 8 2.5 16 0M36 36c4 2.5 8 2.5 14 0s8 2.5 14 0"/>
