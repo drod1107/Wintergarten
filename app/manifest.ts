@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Gluten-free, mammal-free bakery and houseplants in Sullivan, Missouri.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#E6E9DF',
-    theme_color: '#E6E9DF',
+    background_color: '#E8E7E1',
+    theme_color: '#E8E7E1',
     icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
   };
 }
