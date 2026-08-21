@@ -14,10 +14,13 @@ import { recordOrderInZoho } from './zoho';
 // those orders were written to the database and then went silent. No invoice,
 // no Zap, no email.
 //
-// The rule now is: notify at the moment each path actually terminates.
-//   * Card order  -> confirmed payment, from the Stripe webhook. Tax is settled
-//                    by then, and a cart abandoned at Checkout notifies nothing.
-//   * Everything else -> order creation, which for those paths is the end of it.
+// Two rules, not one, pointing in opposite directions (issue #22):
+//   * SALES  -> announced only from the Stripe webhook, once payment is
+//               confirmed. Unpaid, abandoned and failed checkouts are recorded
+//               for pipeline and accounting and notify nothing.
+//   * LEADS  -> wholesale enquiries, arrangement requests and waitlist signups
+//               never touch Stripe. They notify at creation, always, and must
+//               never be gated on payment. They are what feeds Zoho.
 //
 // That is one notification per order, no matter how it ends, and never two.
 // The "never two" half is enforced by claimOrderNotification below rather than

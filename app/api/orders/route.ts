@@ -202,18 +202,27 @@ export async function POST(req: NextRequest) {
     notes: (body.notes || '').trim(),
   });
 
-  // From here on, notify at the moment this order actually terminates.
+  // A waitlist order is never charged, so no Stripe confirmation is ever coming
+  // and creation is the end of it. It notifies here, titled "Waitlist order #N —
+  // nothing charged" so it cannot be mistaken for a sale.
   //
-  // A waitlist order is never charged, so creation is the end of it.
+  // SETTLED (issue #22): a waitlist signup is a LEAD, not a sale. Leads notify at
+  // creation, always, independent of payment — that is what feeds Zoho, and the
+  // whole point of the CRM is that no inbound lead is missed. The paid-only rule
+  // governs sale notifications and does not apply here. Do not make this
+  // conditional on payment; doing so is a regression, not a tidy-up.
   if (chargeCents === 0) {
     await notifyNewOrder(order);
     return NextResponse.json({ redirect: `/order/confirmation?orderId=${orderId}&branch=${branch}` });
   }
 
   // No Stripe in this environment: the order is recorded and that is all that
-  // will ever happen to it.
+  // will ever happen to it. No money moved, so nothing is announced — the row
+  // is kept for pipeline tracking and accounting and nothing else.
   if (!isStripeConfigured()) {
-    await notifyNewOrder(order);
+    console.log(
+      `[orders] order ${orderId} recorded unpaid: Stripe is not configured — no notification sent`
+    );
     return NextResponse.json({
       redirect: `/order/confirmation?orderId=${orderId}&branch=${branch}&payment=skipped`,
     });
@@ -257,9 +266,12 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Payment setup failed.';
     console.error('[orders] Stripe session creation failed:', message);
-    // The row is written but the customer can never pay it — this order ends
-    // here, so it notifies here.
-    await notifyNewOrder(order);
+    // The row is written but was never paid, and now cannot be. It stays in the
+    // database for pipeline tracking and accounting, and announces nothing: a
+    // failed checkout must never reach the owner looking like an order.
+    console.log(
+      `[orders] order ${orderId} recorded unpaid: Stripe session creation failed — no notification sent`
+    );
     return NextResponse.json({ error: 'Payment setup failed — please try again.' }, { status: 502 });
   }
 
