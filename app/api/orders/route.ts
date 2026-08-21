@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     if (!product) return badRequest(`Unknown item: ${line.id}`);
     if (!isOrderable(product)) {
       return badRequest(
-        `${product.name} is arranged directly rather than bought from the cart — send it as an enquiry and we'll come back to you.`
+        `${product.name} is arranged directly rather than bought from the cart — send it as an enquiry and we'll get back to you.`
       );
     }
     if (product.capacity !== null && product.orderedCount + line.qty > product.capacity) {

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Kitchen Record',
   description:
-    "What's never in this building — gluten, mammal-derived ingredients, artificial colour and flavour — plus every ingredient, allergen and cross-contact detail, ingredient by ingredient. Missouri cottage food law RSMo 196.298.",
+    "What's never in this building — gluten, mammal-derived ingredients, artificial color and flavor — plus every ingredient, allergen and cross-contact detail, ingredient by ingredient. Missouri cottage food law RSMo 196.298.",
   alternates: { canonical: `${SITE_URL}/kitchen-record` },
   openGraph: {
     title: `${SITE_NAME} — Kitchen Record`,
