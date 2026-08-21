@@ -147,6 +147,12 @@ alter table products add column if not exists list_on_home boolean not null defa
 -- against the charge. charge_cents is updated at webhook time to the real total.
 alter table orders add column if not exists tax_cents integer not null default 0;
 
+-- notified_at is the once-only guard on the outbound fanout (Zapier, owner
+-- email, Zoho). Claiming it is a conditional update, so a redelivered Stripe
+-- webhook — or any other double call — finds it already set and sends nothing.
+-- Deliberately nullable: null means "not yet notified".
+alter table orders add column if not exists notified_at timestamptz;
+
 -- By-arrangement requests (2026-08-21)
 -- Reservat items (Der Smoking, occasion cakes) are booked by conversation, not
 -- bought from the cart. They arrive as their own order kind so they are not
