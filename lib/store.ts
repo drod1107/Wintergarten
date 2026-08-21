@@ -447,7 +447,7 @@ function rowToOrder(r: any): OrderRecord {
 }
 
 export type NewOrder = {
-  kind: 'order' | 'wholesale';
+  kind: 'order' | 'wholesale' | 'arrangement';
   branch: OrderRecord['branch'];
   name: string;
   email: string;
@@ -462,6 +462,9 @@ export type NewOrder = {
   wholesaleBusiness: string;
   wholesaleQty: string;
   notes: string;
+  // By-arrangement requests are enquiries, not sales. Reserving batch capacity
+  // for one would quietly sell out a reservat item nobody has committed to.
+  reserveCapacity?: boolean;
 };
 
 let demoOrderId = 1;
@@ -491,6 +494,7 @@ export async function createOrder(o: NewOrder): Promise<{ id: number }> {
     ]
   );
   // Reserve capacity immediately so concurrent orders can't oversell a batch.
+  if (o.reserveCapacity === false) return { id: rows[0].id };
   for (const item of o.items) {
     await pool.query('update products set ordered_count = ordered_count + $1 where id = $2', [
       item.qty,

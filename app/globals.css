@@ -1,14 +1,15 @@
 /* ============ TOKENS ============ */
 :root{
-  --paper:#EDEBE4;        /* neutral parchment — cooled from the original warm foxed sheet */
-  --paper-2:#E4E0D8;      /* shadowed sheet */
-  --ink:#20261C;          /* near-black green, typed ink */
-  --forest:#2F3B2A;
-  --rust:#7A3F28;         /* oxidised copper — darkened from the mockup's #8C4A2F to clear WCAG AA 4.5:1 on both paper tones */
-  --gold:#B8AD8F;
-  --hair:rgba(32,38,28,.30);
-  --hair-2:rgba(32,38,28,.14);
-  --focus-ring: 0 0 0 3px rgba(140,74,47,.35);
+  --paper:#E6E9DF;        /* herbarium rag sheet — cool, faint green cast */
+  --paper-2:#D9DED0;      /* shadowed sheet */
+  --ink:#1A2117;          /* deep green-black, typed ink */
+  --forest:#2B3A2A;       /* field green — plate ground */
+  --rust:#6E4C12;         /* burnt ochre — earth pigment accent; 6.3:1 on paper, 5.7:1 on paper-2 */
+  --gold:#B9A96B;         /* dried brass — legible on the dark reservat plate, decorative on paper */
+  --label:#525E46;        /* moss label text on paper; 5.6:1 / 5.0:1 */
+  --hair:rgba(26,33,23,.30);
+  --hair-2:rgba(26,33,23,.14);
+  --focus-ring: 0 0 0 3px rgba(110,76,18,.35);
 }
 
 *{box-sizing:border-box;}
@@ -27,9 +28,9 @@ body{
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:
-    radial-gradient(circle at 12% 22%,rgba(140,74,47,.025),transparent 22%),
-    radial-gradient(circle at 84% 61%,rgba(140,74,47,.02),transparent 26%),
-    radial-gradient(circle at 44% 88%,rgba(47,59,42,.04),transparent 20%),
+    radial-gradient(circle at 12% 22%,rgba(110,76,18,.025),transparent 22%),
+    radial-gradient(circle at 84% 61%,rgba(110,76,18,.02),transparent 26%),
+    radial-gradient(circle at 44% 88%,rgba(43,58,42,.04),transparent 20%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
   mix-blend-mode:multiply;
 }
@@ -80,8 +81,8 @@ p:last-child{margin-bottom:0;}
 }
 .holes i{
   width:9px;height:9px;border-radius:50%;
-  background:rgba(32,38,28,.16);
-  box-shadow:inset 0 1px 1px rgba(32,38,28,.3);
+  background:rgba(26,33,23,.16);
+  box-shadow:inset 0 1px 1px rgba(26,33,23,.3);
 }
 
 /* ============ NAV ============ */
@@ -177,7 +178,7 @@ header.hero{padding:26px 0 0;}
   margin-bottom:44px;
   padding:14px 14px 18px;
   background:var(--paper-2);
-  box-shadow:0 1px 0 rgba(32,38,28,.18);
+  box-shadow:0 1px 0 rgba(26,33,23,.18);
 }
 /* asymmetry cycles every 4 items so it holds regardless of list length */
 .plate:nth-of-type(4n+1){margin-left:0;   margin-right:14%; transform:rotate(-.35deg);}
@@ -216,7 +217,7 @@ header.hero{padding:26px 0 0;}
   padding:5px 9px;transform:rotate(1.6deg);
   font-family:var(--font-mono), monospace;font-size:11px;
   letter-spacing:.08em;text-transform:uppercase;
-  box-shadow:0 1px 0 rgba(32,38,28,.12);
+  box-shadow:0 1px 0 rgba(26,33,23,.12);
 }
 
 .plate h3{margin:20px 0 2px;font-size:clamp(24px,6.5vw,40px);line-height:1.08;overflow-wrap:break-word;word-break:normal;hyphens:none;}
@@ -238,16 +239,16 @@ header.hero{padding:26px 0 0;}
 }
 
 .plate.reservat{background:var(--forest);color:var(--paper);}
-.plate.reservat .frame{background:#27311F;}
+.plate.reservat .frame{background:#222D1C;}
 /* Reservat plates are dark, and the drawings are dark graphite on nothing.
    Inverting the line art (the ground is transparent, so only the strokes
    change) lifts them to a warm light tone that matches the gold rules. */
 .plate.reservat .frame img{filter:invert(1) sepia(.45) saturate(.55) brightness(1.02);}
 .plate.reservat .frame::before,.plate.reservat .frame::after{border-color:var(--gold);}
 .plate.reservat .tab,.plate.reservat .binom,.plate.reservat .spec dt{color:var(--gold);}
-.plate.reservat .tab{border-bottom-color:rgba(184,173,143,.4);}
-.plate.reservat .spec{border-top-color:rgba(184,173,143,.4);}
-.plate.reservat .spec div{border-bottom-color:rgba(184,173,143,.2);}
+.plate.reservat .tab{border-bottom-color:rgba(185,169,107,.4);}
+.plate.reservat .spec{border-top-color:rgba(185,169,107,.4);}
+.plate.reservat .spec div{border-bottom-color:rgba(185,169,107,.2);}
 .plate.reservat .det{background:var(--gold);border-color:var(--gold);color:var(--forest);}
 .plate.reservat .record-link{color:var(--gold);border-bottom-color:var(--gold);}
 
@@ -283,16 +284,16 @@ header.hero{padding:26px 0 0;}
 
 /* ============ RECORD (dark panel) ============ */
 .record{margin:60px 0 0;padding:26px 18px 28px;background:var(--forest);color:var(--paper);margin-left:5%;}
-.record .typed{color:var(--gold);}
+.record .typed{color:var(--label);}
 .record h2{font-size:clamp(24px,7.5vw,38px);margin:12px 0 14px;}
 .record dl{margin:0;}
-.record dl div{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid rgba(184,173,143,.26);}
-.record dt{flex:0 0 90px;font-family:var(--font-mono), monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);padding-top:3px;}
+.record dl div{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid rgba(185,169,107,.26);}
+.record dt{flex:0 0 90px;font-family:var(--font-mono), monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--label);padding-top:3px;}
 .record dd{margin:0;font-size:13.5px;}
 .record .link{
   display:inline-block;margin-top:20px;text-decoration:none;
   font-family:var(--font-display), sans-serif;font-weight:600;text-transform:uppercase;
-  letter-spacing:.14em;font-size:12px;border-bottom:2px solid var(--gold);padding-bottom:4px;
+  letter-spacing:.14em;font-size:12px;border-bottom:2px solid var(--label);padding-bottom:4px;
 }
 
 /* ============ REGISTER (email) ============ */
@@ -304,7 +305,7 @@ header.hero{padding:26px 0 0;}
   flex:1;min-width:0;border:0;background:transparent;color:var(--ink);
   font-family:var(--font-body), sans-serif;font-weight:300;font-size:16px;padding:11px 0;
 }
-.field input::placeholder{color:rgba(32,38,28,.45);}
+.field input::placeholder{color:rgba(26,33,23,.45);}
 .field button{
   border:0;background:transparent;color:var(--rust);cursor:pointer;
   font-family:var(--font-display), sans-serif;font-weight:700;
@@ -348,7 +349,7 @@ footer.site-footer nav a:hover{color:var(--rust);}
 .content-block:nth-of-type(even){margin-left:6%;}
 
 .placeholder-flag{
-  border:1px dashed var(--rust);background:rgba(140,74,47,.06);
+  border:1px dashed var(--rust);background:rgba(110,76,18,.06);
   padding:12px 14px;margin:10px 0;font-size:13.5px;
 }
 .placeholder-flag .typed{display:block;color:var(--rust);margin-bottom:6px;}
@@ -386,7 +387,7 @@ footer.site-footer nav a:hover{color:var(--rust);}
   text-transform:none;letter-spacing:normal;color:var(--ink);min-height:44px;
 }
 .radio-group input{width:16px;height:16px;accent-color:var(--rust);}
-.radio-group label:has(input:checked){border-color:var(--rust);background:rgba(140,74,47,.08);}
+.radio-group label:has(input:checked){border-color:var(--rust);background:rgba(110,76,18,.08);}
 
 .branch-banner{
   margin:14px 0;padding:14px 16px;border:2px solid var(--ink);font-size:14px;line-height:1.5;
