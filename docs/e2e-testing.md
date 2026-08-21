@@ -1,29 +1,35 @@
 # End-to-end testing
 
-**Which deployment you test against decides whether this is safe. Check first.**
+**Every preview deployment is isolated from production, on every branch.**
 
 | Deployment | Database | Stripe key |
 |---|---|---|
-| `dev` preview | its own test database | **test** — a checkout is not a real charge |
-| **any other branch preview** | **production** | **production** — a checkout is a **real charge on real data** |
-| production | production | production |
+| any preview, any branch | separate test database | **test** — a checkout is not a real charge |
+| production | production database | live |
 
-Isolation is scoped to the `dev` git branch only — `vercel env ls` shows
-`DATABASE_URL` and the three `STRIPE_*` variables bound to `Preview (dev)`, and
-everything else falls through to `Production, Preview`. See "Environment
-scoping" in `MASTER-PLAN.md`.
+Verified 2026-08-21 on a non-`dev` branch preview: Checkout returned a
+`cs_test_…` session with the "Sandbox" badge, and the order page rendered "This
+window is open" while production rendered "This window is closed right now" —
+the two databases disagree, which is the proof they are two databases.
 
-So: **test against the `dev` preview.** A feature-branch preview is production
-wearing a different URL. Every order placed against one is a real row in the real
-orders table, which is what the marker convention below exists for.
+This was **not** true earlier the same day, when isolation was scoped to the
+`dev` branch alone and every other branch preview read production with the live
+key. If you are following an older note that says previews are dangerous, it is
+out of date. See "Environment scoping" in `MASTER-PLAN.md`.
 
-Two things are shared by **every** environment, `dev` included:
+Test orders are still real rows in the preview database, which is what the
+marker convention below exists for — and note that `scripts/clear-e2e-orders.mjs`
+reads `DATABASE_URL` from `.env.local`, which points at **production**. It will
+report "nothing matches the marker" while your test rows sit in the preview
+database untouched. To clean preview, point it at the preview database.
 
-- **Notification credentials are not branch-scoped.** `RESEND_API_KEY`,
-  `ORDER_NOTIFY_EMAIL`, `ZOHO_*` and `ZAPIER_WEBHOOK_URL` are
-  `Production, Preview`. A test order on `dev` sends a **real** email to the
-  owner's real inbox and creates a **real** Zoho record, even though its payment
-  was test-mode. Zoho records must be removed by hand.
+Two things are **not** isolated and are shared with production:
+
+- **Notification credentials.** `RESEND_API_KEY`, `ORDER_NOTIFY_EMAIL`,
+  `ZOHO_*` and `ZAPIER_WEBHOOK_URL` are `Production, Preview`. A test order on
+  any preview sends a **real** email to the owner's real inbox and creates a
+  **real** Zoho record, even though its payment was test-mode. Zoho records must
+  be removed by hand — nothing in this repo deletes them.
 - **Stripe webhooks only reach `dev`.** The test-mode endpoint is bound to
   `wintergarten-git-dev-windrose.vercel.app` specifically, so a paid card order
   placed on any other preview URL will never notify.

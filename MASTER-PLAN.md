@@ -32,32 +32,38 @@ _A fresh Claude instance should be able to read this file and execute without an
 - `app/care-guides/` — growing notes index and slug pages
 - `scripts/sync-products.ts` — full upsert of all products from seed-data to DB (safe to re-run; use with DB connection string)
 
-### Environment scoping — verified 2026-08-21
+### Environment scoping — Preview is isolated, verified 2026-08-21
 
-Checked with `vercel env ls`, which shows names and scopes only.
-
-| Variable | `Preview (dev)` override | Environment-wide |
+| Variable | Production | Preview (all branches) |
 |---|---|---|
-| `DATABASE_URL` | yes — separate test database | `Production, Preview` |
-| `STRIPE_SECRET_KEY` | yes — **test** key | `Production, Preview` |
-| `STRIPE_PUBLISHABLE_KEY` | yes | `Production, Preview` |
-| `STRIPE_WEBHOOK_SECRET` | yes — test endpoint | `Production, Preview` |
+| `DATABASE_URL` | production database | separate test database |
+| `STRIPE_SECRET_KEY` | live key | **test** key |
+| `STRIPE_PUBLISHABLE_KEY` | live key | test key |
+| `STRIPE_WEBHOOK_SECRET` | live endpoint | test endpoint |
 
-**Isolation applies to the `dev` branch only.** A deployment built from `dev`
-gets the test database and test Stripe keys — confirmed by a `cs_test_` session
-id and a "Sandbox" badge at Checkout. **Every other preview branch falls through
-to the `Production, Preview` values and therefore reads the production database
-with the production Stripe key.** A checkout on a feature-branch preview is a
-real charge against real data. Treat any branch preview that is not `dev` as
-production.
+Each of the four exists **twice**: once scoped Production only, once scoped
+Preview with no git-branch filter. The earlier `Production, Preview` entries are
+gone, and so is the `Preview (dev)` branch scoping that preceded this.
 
-The intent is to make this Preview-wide. It has **not** landed: Vercel rejects a
-second Preview-scoped variable of the same name (`An Environment Variable with
-the name 'DATABASE_URL' and target 'preview' already exists`), so the
-environment-wide entry has to be narrowed to Production first, and these are
-**Sensitive** variables whose values cannot be read back — the edit form's value
-box is empty and "Copy to Clipboard" is disabled. Re-scoping therefore needs the
-owner, who holds the values.
+**Every preview deployment on every branch now gets the test database and test
+Stripe keys.** Verified end to end on a non-`dev` branch preview
+(`claude/unpaid-checkouts-silent`): Checkout returned a `cs_test_…` session id
+with the "Sandbox" badge, and the order page rendered "This window is open"
+while production rendered "This window is closed right now" — the two databases
+disagree, which is the proof they are two databases.
+
+Ordering matters if this is ever redone: Vercel rejects a second Preview-scoped
+variable of the same name (`An Environment Variable with the name 'DATABASE_URL'
+and target 'preview' already exists`), so narrow the environment-wide entry to
+Production **first**, then widen the branch-scoped one.
+
+**A scope-only change does not require the value.** These are Sensitive
+variables, so the edit form shows an empty value box and "Copy to Clipboard" is
+disabled — but **saving with the box empty preserves the stored value, it does
+not wipe it.** Confirmed on production on 2026-08-21. This was treated as an
+unknown risk twice and blocked the work both times; it is answered. Vercel's own
+API agrees: `PATCH /v9/projects/:idOrName/env/:id` documents every body field,
+including `value`, as optional, so `target` and `gitBranch` can be changed alone.
 
 Notification credentials (`RESEND_API_KEY`, `ORDER_NOTIFY_EMAIL`, `ZOHO_*`,
 `ZAPIER_WEBHOOK_URL`) are **not** branch-scoped. Preview sends real email to the
