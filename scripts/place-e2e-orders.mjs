@@ -77,7 +77,9 @@ const bodies = {
     address: '5312 Highway H, Sullivan, MO 63080',
     manualBranch: 'pickup',
     pickupDay: 'Saturday',
-    items: [{ id: 'WG·B·001', qty: 1 }],
+    // Cheapest orderable item in the live catalogue ($4). Reserves one unit of
+    // batch capacity, which clear-e2e-orders.mjs hands back on cleanup.
+    items: [{ id: 'WG·B·004', qty: 1 }],
     notes: 'Automated end-to-end test of the card notification path. Do not fulfil.',
   }),
 };
