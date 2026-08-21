@@ -14,7 +14,7 @@ import type { OrderBranch, OrderItem } from '@/lib/types';
 type CartLine = { id: string; qty: number };
 
 type OrderRequestBody = {
-  kind: 'order' | 'wholesale';
+  kind: 'order' | 'wholesale' | 'arrangement';
   name: string;
   email: string;
   phone: string;
@@ -25,6 +25,8 @@ type OrderRequestBody = {
   wholesaleBusiness?: string;
   wholesaleQty?: string;
   notes?: string;
+  // Ids of the by-arrangement (reservat) items the enquiry is about.
+  arrangementItems?: string[];
 };
 
 function badRequest(message: string) {
@@ -65,6 +67,45 @@ export async function POST(req: NextRequest) {
       notes: (body.notes || '').trim(),
     });
     return NextResponse.json({ redirect: `/order/confirmation?orderId=${id}&kind=wholesale` });
+  }
+
+  // --- By arrangement: Der Smoking, occasion cakes and anything else booked by
+  // conversation. These carry their own lead time, so they are accepted whether
+  // or not a bake window is open, and no payment is taken here. ---
+  if (body.kind === 'arrangement') {
+    const wanted = (body.arrangementItems || []).filter(Boolean);
+    if (wanted.length === 0) return badRequest('Choose at least one item to arrange.');
+
+    const allProducts = await getProducts();
+    const chosen: OrderItem[] = [];
+    for (const id of wanted) {
+      const product = allProducts.find((p) => p.id === id);
+      if (!product) return badRequest(`Unknown item: ${id}`);
+      if (isOrderable(product)) {
+        return badRequest(`${product.name} is bought from the cart, not arranged.`);
+      }
+      chosen.push({ id: product.id, name: product.name, qty: 1, priceCents: 0 });
+    }
+
+    const { id } = await createOrder({
+      kind: 'arrangement',
+      branch: 'n/a',
+      name,
+      email,
+      phone: (body.phone || '').trim(),
+      address: (body.address || '').trim(),
+      distanceMiles: null,
+      referencePoint: null,
+      pickupDay: '',
+      items: chosen,
+      subtotalCents: 0,
+      chargeCents: 0,
+      wholesaleBusiness: '',
+      wholesaleQty: '',
+      notes: (body.notes || '').trim(),
+      reserveCapacity: false,
+    });
+    return NextResponse.json({ redirect: `/order/confirmation?orderId=${id}&kind=arrangement` });
   }
 
   // --- Regular pre-order ---
