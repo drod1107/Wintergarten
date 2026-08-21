@@ -1,1 +1,21 @@
-²ø1šYì
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" fill="none" role="img" aria-hidden="true">
+  <defs>
+    <filter id="p7" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.038" numOctaves="4" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="1.7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+  <g filter="url(#p7)" stroke="#1F2622" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 44h20v22c0 3-2 5-5 5H25c-3 0-5-2-5-5z"/>
+    <path d="M20 52c4 2 7 2 10 0s6-2 10 0" stroke-width=".8" opacity=".8"/>
+    <path d="M30 44V34c0-4 4-7 9-9" stroke-width=".9"/>
+    <path d="M30 50c-2 5-3 9-2 13M33 51c2 5 2 9 1 12" stroke-width=".6" opacity=".55"/>
+    <path d="M39 25c10-4 21-1 29 6s12 17 13 27" stroke-width="1"/>
+    <g transform="translate(47 25) rotate(-8)"><path d="M0 8C-7.6 2.4,-6.4 -4.8,0 -1.2C6.4 -4.8,7.6 2.4,0 8Z"/><path d="M0 8V-0.96" stroke-width=".6" opacity=".6"/></g>
+    <g transform="translate(60 28) rotate(6)"><path d="M0 8.5C-8.08 2.55,-6.8 -5.1,0 -1.28C6.8 -5.1,8.08 2.55,0 8.5Z"/><path d="M0 8.5V-1.02" stroke-width=".6" opacity=".6"/></g>
+    <g transform="translate(70 37) rotate(14)"><path d="M0 8C-7.6 2.4,-6.4 -4.8,0 -1.2C6.4 -4.8,7.6 2.4,0 8Z"/><path d="M0 8V-0.96" stroke-width=".6" opacity=".6"/></g>
+    <g transform="translate(78 50) rotate(8)"><path d="M0 7.5C-7.13 2.25,-6 -4.5,0 -1.13C6 -4.5,7.13 2.25,0 7.5Z"/><path d="M0 7.5V-0.9" stroke-width=".6" opacity=".6"/></g>
+    <g transform="translate(82 64) rotate(16)" opacity="0.9"><path d="M0 6.5C-6.18 1.95,-5.2 -3.9,0 -0.98C5.2 -3.9,6.18 1.95,0 6.5Z"/><path d="M0 6.5V-0.78" stroke-width=".6" opacity=".6"/></g>
+    <path d="M42.0 23.0l3.5 -9M46.0 23.0l3.5 -9M50.0 23.0l3.5 -9M54.0 23.0l3.5 -9" stroke-width=".6" opacity="0.2"/>
+  </g>
+</svg>
