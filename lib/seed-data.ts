@@ -20,7 +20,7 @@ export const SEED_PRODUCTS: Product[] = [
     subtitle: 'the everyday one',
     specs: [
       { label: 'Eats like', value: "The pan your grandmother didn't cut evenly." },
-      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Free of', value: 'Gluten · mammal · artificial color and flavor' },
       { label: 'Cut', value: '9×13, cut 3×4 — 16 per two-pan session' },
       { label: 'Keeps', value: '4 days, sealed' },
     ],
@@ -45,7 +45,7 @@ export const SEED_PRODUCTS: Product[] = [
     subtitle: 'cinnamon, twice',
     specs: [
       { label: 'Eats like', value: 'Soft in the middle two days running.' },
-      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Free of', value: 'Gluten · mammal · artificial color and flavor' },
       { label: 'Yield', value: '36 per batch' },
       { label: 'Keeps', value: '5 days, sealed' },
     ],
@@ -69,7 +69,7 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Iced Lemon Loaf',
     subtitle: 'per slice — iced, sliced thick',
     specs: [
-      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Free of', value: 'Gluten · mammal · artificial color and flavor' },
       { label: 'Format', value: '9×5 loaf' },
       { label: 'Sold as', value: 'By the slice, or a whole loaf' },
     ],
@@ -94,7 +94,7 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Pumpkin Loaf',
     subtitle: 'per slice — warm spice, cool season',
     specs: [
-      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Free of', value: 'Gluten · mammal · artificial color and flavor' },
       { label: 'Format', value: '9×5 loaf' },
       { label: 'Sold as', value: 'By the slice, or a whole loaf' },
     ],
@@ -119,7 +119,7 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Iced Lemon Loaf — Whole',
     subtitle: 'whole loaf',
     specs: [
-      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Free of', value: 'Gluten · mammal · artificial color and flavor' },
       { label: 'Format', value: '9×5 loaf' },
       { label: 'Sold as', value: 'Whole loaf only' },
     ],
@@ -144,7 +144,7 @@ export const SEED_PRODUCTS: Product[] = [
     name: 'Pumpkin Loaf — Whole',
     subtitle: 'whole loaf',
     specs: [
-      { label: 'Free of', value: 'Gluten · mammal · artificial colour and flavour' },
+      { label: 'Free of', value: 'Gluten · mammal · artificial color and flavor' },
       { label: 'Format', value: '9×5 loaf' },
       { label: 'Sold as', value: 'Whole loaf only' },
     ],
@@ -199,7 +199,7 @@ export const SEED_PRODUCTS: Product[] = [
       { label: 'Sold as', value: 'By order only' },
     ],
     priceCents: 4500,
-    priceNote: 'to $72, depending on size and flavour',
+    priceNote: 'to $72, depending on size and flavor',
     pricePending: false,
     ships: false,
     capacity: 4,
@@ -338,14 +338,14 @@ export const SEED_STAND_STATUS: StandStatus = {
 
 export const SEED_KITCHEN_RECORD: KitchenRecordContent = {
   neverInBuilding: [
-    { label: 'Gluten', detail: 'Never on the premises.', placeholder: false },
+    { label: 'Gluten', detail: 'All contamination risks are certified gluten-free.', placeholder: false },
     {
       label: 'Mammal',
       detail: 'No dairy, gelatin, tallow, or rendered fat of any kind, ever.',
       placeholder: false,
     },
-    { label: 'Artificial colour', detail: 'Never used.', placeholder: false },
-    { label: 'Artificial flavour', detail: 'Never used.', placeholder: false },
+    { label: 'Artificial color', detail: 'Never used.', placeholder: false },
+    { label: 'Artificial flavor', detail: 'Never used.', placeholder: false },
   ],
   eggsStatement: {
     text:
