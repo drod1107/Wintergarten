@@ -23,7 +23,9 @@ export default function OrderForm({
   pickupDaysDefault: string;
   windowOpen: boolean;
 }) {
-  const [kind, setKind] = useState<'order' | 'wholesale'>(windowOpen ? 'order' : 'wholesale');
+  const [kind, setKind] = useState<'order' | 'wholesale' | 'arrangement'>(
+    windowOpen ? 'order' : 'wholesale'
+  );
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -34,6 +36,7 @@ export default function OrderForm({
   const [cart, setCart] = useState<Record<string, number>>({});
   const [wholesaleBusiness, setWholesaleBusiness] = useState('');
   const [wholesaleQty, setWholesaleQty] = useState('');
+  const [arrangementItems, setArrangementItems] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +90,33 @@ export default function OrderForm({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (kind === 'arrangement') {
+      if (!name || !email) {
+        setError('Name and email are required.');
+        return;
+      }
+      if (arrangementItems.length === 0) {
+        setError('Choose at least one item to arrange.');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kind, name, email, phone, arrangementItems, notes }),
+        });
+        let data: any = {};
+        try { data = await res.json(); } catch { /* empty body */ }
+        if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+        window.location.href = data.redirect;
+      } catch (err: any) {
+        setError(err.message);
+        setSubmitting(false);
+      }
+      return;
+    }
 
     if (kind === 'wholesale') {
       if (!name || !email) {
@@ -159,7 +189,10 @@ export default function OrderForm({
     <form onSubmit={onSubmit} noValidate>
       <div className="form-section">
         <h2>What is this?</h2>
-        <p className="section-note">One form handles a pre-order, an out-of-area enquiry, and wholesale.</p>
+        <p className="section-note">
+          One form handles a pre-order, a by-arrangement booking, an out-of-area enquiry, and
+          wholesale.
+        </p>
         <div className="radio-group" role="radiogroup" aria-label="Order type">
           <label>
             <input
@@ -171,6 +204,17 @@ export default function OrderForm({
             />
             Pre-order for pickup or shipping{!windowOpen && ' (window closed)'}
           </label>
+          {byArrangement.length > 0 && (
+            <label>
+              <input
+                type="radio"
+                name="kind"
+                checked={kind === 'arrangement'}
+                onChange={() => setKind('arrangement')}
+              />
+              Something arranged directly (no bake window needed)
+            </label>
+          )}
           <label>
             <input type="radio" name="kind" checked={kind === 'wholesale'} onChange={() => setKind('wholesale')} />
             Wholesale or café enquiry
@@ -357,8 +401,8 @@ export default function OrderForm({
                 <p style={{ marginBottom: 0 }}>
                   {byArrangement.map((p) => p.name).join(', ')} —{' '}
                   {byArrangement.length === 1 ? 'this one is' : 'these are'} arranged directly rather
-                  than added to a cart. Say what you have in mind in the notes below and we&apos;ll come
-                  back to you.
+                  than added to a cart. Pick that option at the top of this form and tell us what you
+                  have in mind — it can be sent on its own, without anything else in the order.
                 </p>
               </div>
             )}
@@ -372,6 +416,45 @@ export default function OrderForm({
             </div>
           </div>
         </>
+      ) : kind === 'arrangement' ? (
+        <div className="form-section">
+          <h2>What to arrange</h2>
+          <p className="section-note">
+            These are booked by conversation, not bought from the cart. Nothing is charged here —
+            we come back to you with the details and take payment once it is settled. Send this on
+            its own; nothing else has to be in the order.
+          </p>
+          <div className="radio-group" role="group" aria-label="Items to arrange">
+            {byArrangement.map((p) => (
+              <label key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={arrangementItems.includes(p.id)}
+                  onChange={(e) =>
+                    setArrangementItems((prev) =>
+                      e.target.checked ? [...prev, p.id] : prev.filter((id) => id !== p.id)
+                    )
+                  }
+                />
+                {p.name}
+                {p.specs.find((sp) => sp.label === 'Notice') && (
+                  <span className="typed" style={{ marginLeft: 8 }}>
+                    {p.specs.find((sp) => sp.label === 'Notice')?.value} notice
+                  </span>
+                )}
+              </label>
+            ))}
+          </div>
+          <div className="form-row">
+            <label htmlFor="of-notes-a">What you have in mind</label>
+            <textarea
+              id="of-notes-a"
+              placeholder="Date needed, size, flavour, how many, anything else"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+        </div>
       ) : (
         <div className="form-section">
           <h2>Wholesale details</h2>
@@ -410,6 +493,8 @@ export default function OrderForm({
       <button type="submit" className="btn btn-block" disabled={submitting}>
         {submitting
           ? 'Sending…'
+          : kind === 'arrangement'
+          ? 'Send request'
           : kind === 'wholesale'
           ? 'Send enquiry'
           : subtotalCents > 0

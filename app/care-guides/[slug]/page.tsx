@@ -71,7 +71,7 @@ export default async function CareGuidePage({ params }: { params: Promise<{ slug
             {isDraft && (
               <p className="placeholder-flag" style={{ maxWidth: '60ch', marginTop: 16 }}>
                 <span className="typed">Draft</span>
-                Written as a working example of this guide format â€” not yet reviewed in the owner&apos;s
+                Written as a working example of this guide format — not yet reviewed in the owner&apos;s
                 own words.
               </p>
             )}
@@ -84,7 +84,7 @@ export default async function CareGuidePage({ params }: { params: Promise<{ slug
           {relatedProduct && (
             <p style={{ margin: '40px 0 60px' }}>
               <Link href="/order" className="btn btn-outline">
-                {relatedProduct.name} is {relatedProduct.priceCents > 0 ? `$${(relatedProduct.priceCents / 100).toFixed(0)}` : 'available'} â†’
+                {relatedProduct.name} is {relatedProduct.priceCents > 0 ? `$${(relatedProduct.priceCents / 100).toFixed(0)}` : 'available'} →
               </Link>
             </p>
           )}
