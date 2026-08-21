@@ -65,7 +65,8 @@ real inbox and writes real Zoho records, even when its payments are test-mode.
 That is why a test order produces a genuine-looking notification.
 
 **Stripe webhook endpoints** (dashboard state; nothing in this repo configures
-them):
+them). Both rows below were read from the Stripe dashboard on 2026-08-21 after
+the second event was added, and re-checked on a fresh page load:
 
 | Mode | Name | URL | Events |
 |---|---|---|---|
@@ -104,9 +105,14 @@ They label themselves as enquiries rather than sales (`lib/notify-email.ts`
 
 If any of the three lead paths goes quiet, that is a regression, not a fix.
 
-`lib/notify.ts` → `notifyNewOrder()` is the single entry point for both. It
-refuses to fan out a payable order that Stripe has not confirmed, and fans out to
-three channels concurrently:
+`lib/notify.ts` → `notifyNewOrder()` is the single entry point for both. Note
+what it does **not** do: there is no payment check inside it. Hand it an unpaid
+payable order and it will fan out. The paid-only rule is enforced entirely at the
+**call sites** — the only caller that can pass a payable order is the Stripe
+webhook, behind `payment_status === 'paid'`. If you add a new `notifyNewOrder`
+call, that check is your responsibility; there is no backstop underneath you.
+
+It fans out to three channels concurrently:
 
 1. `lib/zapier.ts` → `notifyZapier()` — needs `ZAPIER_WEBHOOK_URL`
 2. `lib/notify-email.ts` → `notifyOwnerByEmail()` — needs `RESEND_API_KEY` + `ORDER_NOTIFY_EMAIL`
@@ -276,9 +282,12 @@ Fix nothing without updating this file first.
 - Separate work stream. Not blocking anything critical.
 - Status: ⬜ FUTURE WORK
 
-**BUG-26: `/api/debug-notify` endpoint is live in production.**
-- Low risk but unnecessary. Delete after email is confirmed working.
-- Status: ⬜ TODO (bundle with next code deploy)
+**BUG-26: `/api/debug-notify` endpoint was live in production.**
+- It was worse than "low risk": it returned `ORDER_NOTIFY_EMAIL` in plaintext to
+  any unauthenticated caller.
+- Deleted in PR #18/#19. `/api/debug-notify` returns 404 on the dev deployment,
+  checked 2026-08-21, and no `app/api/debug-notify` directory exists in the tree.
+- Status: ✅ FIXED
 
 **BUG-27: Direct push to main bypassed branch protection (commit 1f2bb63).**
 - One empty commit exists directly on main. Branch protection rule may not be enforced. Investigate Vercel/GitHub integration and tighten rules.

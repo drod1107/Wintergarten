@@ -1,8 +1,32 @@
-# End-to-end testing against the shared database
+# End-to-end testing
 
-Preview and production share one Neon database. Every test order placed against
-any deployment is a real row in the real orders table. The convention below
-exists so those rows can always be told apart from real ones, and removed.
+**Which deployment you test against decides whether this is safe. Check first.**
+
+| Deployment | Database | Stripe key |
+|---|---|---|
+| `dev` preview | its own test database | **test** — a checkout is not a real charge |
+| **any other branch preview** | **production** | **production** — a checkout is a **real charge on real data** |
+| production | production | production |
+
+Isolation is scoped to the `dev` git branch only — `vercel env ls` shows
+`DATABASE_URL` and the three `STRIPE_*` variables bound to `Preview (dev)`, and
+everything else falls through to `Production, Preview`. See "Environment
+scoping" in `MASTER-PLAN.md`.
+
+So: **test against the `dev` preview.** A feature-branch preview is production
+wearing a different URL. Every order placed against one is a real row in the real
+orders table, which is what the marker convention below exists for.
+
+Two things are shared by **every** environment, `dev` included:
+
+- **Notification credentials are not branch-scoped.** `RESEND_API_KEY`,
+  `ORDER_NOTIFY_EMAIL`, `ZOHO_*` and `ZAPIER_WEBHOOK_URL` are
+  `Production, Preview`. A test order on `dev` sends a **real** email to the
+  owner's real inbox and creates a **real** Zoho record, even though its payment
+  was test-mode. Zoho records must be removed by hand.
+- **Stripe webhooks only reach `dev`.** The test-mode endpoint is bound to
+  `wintergarten-git-dev-windrose.vercel.app` specifically, so a paid card order
+  placed on any other preview URL will never notify.
 
 ## The marker
 

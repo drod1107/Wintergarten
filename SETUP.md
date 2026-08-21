@@ -34,12 +34,22 @@ degrades gracefully).
 2. Dashboard → Developers → API keys. Copy the test **Secret key** and
    **Publishable key**.
 3. Set `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY`.
-4. Optional but recommended: Dashboard → Developers → Webhooks → add endpoint
-   `https://yourdomain.com/api/stripe/webhook`, select
-   `checkout.session.completed`, copy the signing secret into
-   `STRIPE_WEBHOOK_SECRET`. This is a reliability backstop — payment is
-   already confirmed on the order confirmation page itself, but the webhook
-   catches the case where a customer closes the tab before returning.
+4. **Required, not optional.** Dashboard → Developers → Webhooks → add endpoint
+   `https://yourdomain.com/api/stripe/webhook`, select **both**
+   `checkout.session.completed` **and** `checkout.session.async_payment_succeeded`,
+   and copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+   This is **not** a backstop. The webhook is the only place a sale is ever
+   announced — no email, Zap or Zoho record is created anywhere else. Without
+   `STRIPE_WEBHOOK_SECRET` the route returns 400 and nobody is ever told about a
+   paid order. The order confirmation page marks the row paid but deliberately
+   notifies nothing.
+
+   Both events, because `checkout.session.completed` is not proof of payment:
+   for delayed methods (ACH, bank transfer, Klarna) it fires immediately with
+   `payment_status: 'unpaid'` and the money clears later under
+   `async_payment_succeeded`. The handler gates both on
+   `payment_status === 'paid'`.
 5. Test with Stripe's published test card: `4242 4242 4242 4242`, any future
    expiry, any CVC, any ZIP.
 
@@ -91,7 +101,7 @@ has ordinary outbound internet access.
 | `ADMIN_SESSION_SECRET` | Admin login | Long random string |
 | `STRIPE_SECRET_KEY` | Checkout | Test or live, from the Stripe dashboard |
 | `STRIPE_PUBLISHABLE_KEY` | Checkout | Currently unused server-side but reserved for a future client Elements upgrade |
-| `STRIPE_WEBHOOK_SECRET` | Checkout reliability | Optional |
+| `STRIPE_WEBHOOK_SECRET` | **Sale notifications** | **Required.** Without it the webhook 400s and no paid order ever notifies anyone |
 | `ZAPIER_WEBHOOK_URL` | Sale and lead notifications | Optional; empty is reported as `skipped` |
 | `NEXT_PUBLIC_SITE_URL` | Metadata, Stripe redirect URLs | Set to your real domain in production |
 

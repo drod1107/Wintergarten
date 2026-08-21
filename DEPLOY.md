@@ -124,9 +124,14 @@ After the deploy finishes:
       that proves the database is connected and writable.
 - [ ] Place a test order and pay with Stripe's test card
       `4242 4242 4242 4242`, any future expiry, any CVC, any ZIP.
-- [ ] Stripe → Webhooks → your endpoint shows a successful
-      `checkout.session.completed` delivery.
+- [ ] Stripe → Webhooks → your endpoint lists **both**
+      `checkout.session.completed` and `checkout.session.async_payment_succeeded`
+      as enabled events, and shows a successful `checkout.session.completed`
+      delivery.
 - [ ] The order shows as **paid** in the admin orders export.
+- [ ] The owner received the "Order #N paid" email. If the row is paid but no
+      email arrived, the webhook is the thing to look at — it is the only place
+      a sale is announced.
 
 ## 8. Zapier, when you're ready
 
