@@ -1,3 +1,4 @@
+import type { NotifyResult } from './types';
 import type { ZapierOrderPayload } from './zapier';
 
 // Owner order alert by email via Resend's HTTP API (no SDK dependency).
@@ -13,12 +14,28 @@ export function isEmailNotifyConfigured(): boolean {
   );
 }
 
-// Never throws and never blocks the caller's own success path: a mail
-// provider outage must not cause Stripe's webhook to fail and retry.
-export async function notifyOwnerByEmail(payload: ZapierOrderPayload): Promise<void> {
+// What kind of thing this is, in plain words, for the subject line and the
+// first line of the body. An enquiry is not a sale and must not read like one.
+function headline(payload: ZapierOrderPayload): string {
+  if (payload.orderKind === 'wholesale') return `Wholesale enquiry #${payload.orderId}`;
+  if (payload.orderKind === 'arrangement') return `Arrangement request #${payload.orderId}`;
+  if (payload.branchIsWaitlist) return `Waitlist order #${payload.orderId} — nothing charged`;
+  if (payload.event === 'order.paid') return `Order #${payload.orderId} paid — $${payload.total}`;
+  return `Order #${payload.orderId} placed — $${payload.total} (payment not yet confirmed)`;
+}
+
+// Never throws, so a mail provider outage cannot take down an order
+// submission — but it now reports the outcome rather than swallowing it.
+export async function notifyOwnerByEmail(payload: ZapierOrderPayload): Promise<NotifyResult> {
   const apiKey = (process.env.RESEND_API_KEY || '').trim();
   const to = (process.env.ORDER_NOTIFY_EMAIL || '').trim();
-  if (!apiKey || !to) return;
+  if (!apiKey || !to) {
+    return {
+      channel: 'email',
+      status: 'skipped',
+      detail: 'RESEND_API_KEY and/or ORDER_NOTIFY_EMAIL not set',
+    };
+  }
 
   const from =
     (process.env.ORDER_NOTIFY_FROM || '').trim() ||
@@ -26,9 +43,9 @@ export async function notifyOwnerByEmail(payload: ZapierOrderPayload): Promise<v
 
   const lines = payload.items.map((i) => `${i.qty} × ${i.name} — $${i.lineTotal}`);
   const text = [
-    `Order #${payload.orderId} paid — $${payload.total}`,
+    headline(payload),
     '',
-    ...lines,
+    ...(lines.length ? lines : ['(no line items — enquiry)']),
     '',
     `Customer: ${payload.customerName}`,
     `Phone: ${payload.customerPhone}`,
@@ -50,16 +67,27 @@ export async function notifyOwnerByEmail(payload: ZapierOrderPayload): Promise<v
       body: JSON.stringify({
         from,
         to: to.split(',').map((s) => s.trim()).filter(Boolean),
-        subject: `Wintergarten order #${payload.orderId}: ${payload.itemsSummary} — $${payload.total}`,
+        subject: `Wintergarten — ${headline(payload)}${
+          payload.itemsSummary ? `: ${payload.itemsSummary}` : ''
+        }`,
         text,
       }),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      console.error(`Order email returned ${res.status} for order ${payload.orderId}: ${body}`);
+      return {
+        channel: 'email',
+        status: 'failed',
+        detail: `Resend returned HTTP ${res.status}: ${body.slice(0, 200)}`,
+      };
     }
+    return { channel: 'email', status: 'ok' };
   } catch (err) {
-    console.error(`Order email failed for order ${payload.orderId}:`, err);
+    return {
+      channel: 'email',
+      status: 'failed',
+      detail: err instanceof Error ? err.message : String(err),
+    };
   }
 }

@@ -7,6 +7,7 @@ import {
   isOrderable,
   setOrderStripeSession,
 } from '@/lib/store';
+import { notifyNewOrder } from '@/lib/notify';
 import { getStripe, isStripeConfigured } from '@/lib/stripe';
 import { SITE_URL } from '@/lib/site';
 import type { OrderBranch, OrderItem } from '@/lib/types';
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
 
   // --- Wholesale: always accepted as an enquiry, independent of the order window ---
   if (body.kind === 'wholesale') {
-    const { id } = await createOrder({
+    const { id, order } = await createOrder({
       kind: 'wholesale',
       branch: 'n/a',
       name,
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
       wholesaleQty: (body.wholesaleQty || '').trim(),
       notes: (body.notes || '').trim(),
     });
+    // A wholesale enquiry never reaches Stripe, so this is its only chance to
+    // be notified. It used to have none.
+    await notifyNewOrder(order);
     return NextResponse.json({ redirect: `/order/confirmation?orderId=${id}&kind=wholesale` });
   }
 
@@ -87,7 +91,7 @@ export async function POST(req: NextRequest) {
       chosen.push({ id: product.id, name: product.name, qty: 1, priceCents: 0 });
     }
 
-    const { id } = await createOrder({
+    const { id, order } = await createOrder({
       kind: 'arrangement',
       branch: 'n/a',
       name,
@@ -105,6 +109,8 @@ export async function POST(req: NextRequest) {
       notes: (body.notes || '').trim(),
       reserveCapacity: false,
     });
+    // Same again: an arrangement request returns before Stripe by design.
+    await notifyNewOrder(order);
     return NextResponse.json({ redirect: `/order/confirmation?orderId=${id}&kind=arrangement` });
   }
 
@@ -178,7 +184,7 @@ export async function POST(req: NextRequest) {
   const subtotalCents = lineItems.reduce((sum, li) => sum + li.priceCents * li.qty, 0);
   const chargeCents = branch === 'waitlist' ? 0 : subtotalCents;
 
-  const { id: orderId } = await createOrder({
+  const { id: orderId, order } = await createOrder({
     kind: 'order',
     branch,
     name,
@@ -196,11 +202,18 @@ export async function POST(req: NextRequest) {
     notes: (body.notes || '').trim(),
   });
 
+  // From here on, notify at the moment this order actually terminates.
+  //
+  // A waitlist order is never charged, so creation is the end of it.
   if (chargeCents === 0) {
+    await notifyNewOrder(order);
     return NextResponse.json({ redirect: `/order/confirmation?orderId=${orderId}&branch=${branch}` });
   }
 
+  // No Stripe in this environment: the order is recorded and that is all that
+  // will ever happen to it.
   if (!isStripeConfigured()) {
+    await notifyNewOrder(order);
     return NextResponse.json({
       redirect: `/order/confirmation?orderId=${orderId}&branch=${branch}&payment=skipped`,
     });
@@ -244,9 +257,17 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Payment setup failed.';
     console.error('[orders] Stripe session creation failed:', message);
+    // The row is written but the customer can never pay it — this order ends
+    // here, so it notifies here.
+    await notifyNewOrder(order);
     return NextResponse.json({ error: 'Payment setup failed — please try again.' }, { status: 502 });
   }
 
+  // Deliberately no notification on this path. The customer is on their way to
+  // Stripe Checkout and the order has not terminated yet: it either gets paid,
+  // in which case the webhook notifies with the settled, taxed total, or the
+  // cart is abandoned and nothing should ever be sent. Notifying here is what
+  // would produce bakes for carts that were never paid for.
   await setOrderStripeSession(orderId, session.id);
   return NextResponse.json({ checkoutUrl: session.url });
 }
