@@ -21,7 +21,21 @@ function headline(payload: ZapierOrderPayload): string {
   if (payload.orderKind === 'arrangement') return `Arrangement request #${payload.orderId}`;
   if (payload.branchIsWaitlist) return `Waitlist order #${payload.orderId} — nothing charged`;
   if (payload.event === 'order.paid') return `Order #${payload.orderId} paid — $${payload.total}`;
-  return `Order #${payload.orderId} placed — $${payload.total} (payment not yet confirmed)`;
+
+  // Unreachable by construction: notifyNewOrder refuses to fan out a payable
+  // order that Stripe has not confirmed, so a payload with a charge on it can
+  // never arrive here carrying anything but 'order.paid'.
+  //
+  // The old line here read "Order #N placed — $X (payment not yet confirmed)"
+  // and was the exact message the paid-only rule exists to stop: an unpaid
+  // attempt landing in the owner's inbox looking like a sale. It is not
+  // reinstated with softer wording — if this branch is ever reached, that is a
+  // regression in the guard and it should be loud, not quietly mailed out.
+  throw new Error(
+    `[notify-email] refusing to describe unpaid order #${payload.orderId} as an order ` +
+      `(event=${payload.event}, total=$${payload.total}) — the paid-only guard in ` +
+      'lib/notify.ts should have stopped this before it got here'
+  );
 }
 
 // Never throws, so a mail provider outage cannot take down an order
@@ -41,9 +55,24 @@ export async function notifyOwnerByEmail(payload: ZapierOrderPayload): Promise<N
     (process.env.ORDER_NOTIFY_FROM || '').trim() ||
     'Wintergarten Orders <onboarding@resend.dev>';
 
+  // headline() throws if it is ever handed an unpaid payable order. Catch it
+  // here so this function keeps its promise never to throw: the outcome is
+  // reported as a loud `failed` in the fanout log instead of escaping, and
+  // crucially no mail is sent either way.
+  let head: string;
+  try {
+    head = headline(payload);
+  } catch (err) {
+    return {
+      channel: 'email',
+      status: 'failed',
+      detail: err instanceof Error ? err.message : String(err),
+    };
+  }
+
   const lines = payload.items.map((i) => `${i.qty} × ${i.name} — $${i.lineTotal}`);
   const text = [
-    headline(payload),
+    head,
     '',
     ...(lines.length ? lines : ['(no line items — enquiry)']),
     '',
@@ -67,7 +96,7 @@ export async function notifyOwnerByEmail(payload: ZapierOrderPayload): Promise<N
       body: JSON.stringify({
         from,
         to: to.split(',').map((s) => s.trim()).filter(Boolean),
-        subject: `Wintergarten — ${headline(payload)}${
+        subject: `Wintergarten — ${head}${
           payload.itemsSummary ? `: ${payload.itemsSummary}` : ''
         }`,
         text,
