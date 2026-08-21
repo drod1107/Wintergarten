@@ -14,21 +14,17 @@ import { recordOrderInZoho } from './zoho';
 // those orders were written to the database and then went silent. No invoice,
 // no Zap, no email.
 //
-// The rule is: no notification without money Stripe has confirmed.
-//   * Anything payable -> Stripe confirms payment, or nothing is sent. Ever.
-//     A checkout that is abandoned, expired, failed, or still pending is
-//     recorded for pipeline tracking and accounting and notifies nobody.
-//   * Non-payable enquiries (wholesale, arrangement, waitlist) -> notify at
-//     creation, labelled as enquiries rather than sales, because no payment is
-//     ever expected on those paths.
-//
-// Why: anything that reads as an "order" when no money has moved creates a
-// false obligation to bake, and a conversation with a customer who never paid.
+// Two rules, not one, pointing in opposite directions (issue #22):
+//   * SALES  -> announced only from the Stripe webhook, once payment is
+//               confirmed. Unpaid, abandoned and failed checkouts are recorded
+//               for pipeline and accounting and notify nothing.
+//   * LEADS  -> wholesale enquiries, arrangement requests and waitlist signups
+//               never touch Stripe. They notify at creation, always, and must
+//               never be gated on payment. They are what feeds Zoho.
 //
 // That is one notification per order, no matter how it ends, and never two.
 // The "never two" half is enforced by claimOrderNotification below rather than
-// by trusting the call sites; the "never unpaid" half is enforced by the
-// payable-order guard in notifyNewOrder, for the same reason.
+// by trusting the call sites.
 
 const CHANNELS: NotifyChannel[] = ['zapier', 'email', 'zoho'];
 
@@ -75,26 +71,6 @@ export async function notifyNewOrder(
     return [];
   }
 
-  // The paid-only rule, enforced here rather than at the call sites.
-  //
-  // A payable order — anything with a charge on it — may only be announced once
-  // Stripe has confirmed the money, which is the one place 'order.paid' is set
-  // (app/api/stripe/webhook/route.ts, behind payment_status === 'paid').
-  // Abandoned, expired, failed and pending-payment checkouts all reach the end
-  // of their request with a row in the database and nothing sent, which is the
-  // point: they are captured for pipeline tracking and accounting, silently.
-  //
-  // Deliberately before claimOrderNotification, so refusing to send does not
-  // burn the order's one claim. If the same order is later genuinely paid, the
-  // webhook still finds notified_at null and notifies properly.
-  if (order.chargeCents > 0 && opts.event !== 'order.paid') {
-    console.log(
-      `[notify] order ${order.id} (${order.kind}/${order.branch}) is payable but unpaid ` +
-        `(event=${opts.event ?? 'none'}, charge=${order.chargeCents}) — recorded, nothing sent`
-    );
-    return [];
-  }
-
   // One claim per order, won in the database. A redelivered Stripe webhook, or
   // any accidental second call, stops here.
   if (!(await claimOrderNotification(order.id))) {
@@ -102,12 +78,6 @@ export async function notifyNewOrder(
     return [];
   }
 
-  // Anything reaching this line is either 'order.paid' — money confirmed by
-  // Stripe — or a non-payable enquiry with chargeCents === 0. The guard above
-  // makes it impossible for a payable order to be described as 'order.created',
-  // which is what previously let an unpaid attempt reach Zapier and Zoho looking
-  // like a sale. The literal is kept rather than renamed because David's live Zap
-  // matches on it; the guarantee is enforced above, not by the string.
   const payload = buildOrderPayload(order, opts.event ?? 'order.created');
 
   const work = Promise.allSettled([

@@ -5,8 +5,8 @@ import { notifyNewOrder } from '@/lib/notify';
 
 // This file is the ONLY place a payable order is ever announced.
 //
-// The rule: no notification of any kind — email, Zap, Zoho, anything — unless
-// Stripe has confirmed the money. Abandoned, expired, failed and pending-payment
+// The rule: no SALE notification of any kind — email, Zap, Zoho, anything —
+// unless Stripe has confirmed the money. Abandoned, expired, failed and pending-payment
 // checkouts keep their database row for pipeline tracking and accounting, and
 // send nothing. An "order" in the owner's inbox when no money has moved creates
 // a false obligation to bake and an argument with a customer who never paid.
@@ -14,9 +14,10 @@ import { notifyNewOrder } from '@/lib/notify';
 // Confirmed payment is also the right moment on its own merits: the tax is
 // settled by then, so the figure the owner sees is what was actually collected.
 //
-// The non-payable enquiry paths — wholesale, arrangement, waitlist — never reach
-// Stripe and notify at creation in app/api/orders/route.ts, labelled as enquiries
-// rather than sales. Whether they should notify at all is open; see issue #22.
+// This governs SALE notifications only. Leads are a different rule: wholesale
+// enquiries, arrangement requests and waitlist signups never reach Stripe, notify
+// at creation in app/api/orders/route.ts, and must never be gated on payment or
+// silenced — they are what feeds Zoho. Settled; see issue #22.
 //
 // Double-firing is prevented in the database rather than here: notifyNewOrder
 // claims the order's notified_at before sending, so a Stripe redelivery of the

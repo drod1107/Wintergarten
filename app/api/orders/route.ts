@@ -206,10 +206,11 @@ export async function POST(req: NextRequest) {
   // and creation is the end of it. It notifies here, titled "Waitlist order #N —
   // nothing charged" so it cannot be mistaken for a sale.
   //
-  // PENDING (issue #22): whether the three non-payable enquiry paths — wholesale,
-  // arrangement and this one — keep their creation-time notification at all is
-  // David's call and has not been made. Left as-is deliberately. Do not silence
-  // these without his ruling.
+  // SETTLED (issue #22): a waitlist signup is a LEAD, not a sale. Leads notify at
+  // creation, always, independent of payment — that is what feeds Zoho, and the
+  // whole point of the CRM is that no inbound lead is missed. The paid-only rule
+  // governs sale notifications and does not apply here. Do not make this
+  // conditional on payment; doing so is a regression, not a tidy-up.
   if (chargeCents === 0) {
     await notifyNewOrder(order);
     return NextResponse.json({ redirect: `/order/confirmation?orderId=${orderId}&branch=${branch}` });
