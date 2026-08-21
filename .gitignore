@@ -118,3 +118,31 @@ yarn-error.log*
 # source of truth that caused this week's confusion. MASTER-PLAN.md is the
 # source of truth. Scanned 2026-08-21: no secrets, no customer data.
 .handoff/
+
+# ------------------------------------------- internal working documentation
+# This repository is public and has no outside contributors. The planning and
+# working documents are internal: operational detail, account identifiers,
+# integration status, owner-facing procedure. They were removed from the repo
+# and from git history on 2026-08-21 and now live outside the repo at
+# C:\Users\david_9uweb6c\code\wintergarten-local-docs\.
+#
+# Removing them from HEAD did NOT un-publish anything already fetched, and
+# rotation — not deletion — is the remedy for any credential they contained.
+/DEPLOY.md
+/HANDOVER.md
+/HISTORY-LOG.md
+/MASTER-PLAN.md
+/README.md
+/SETUP.md
+/docs/
+
+# CLAUDE.md and AGENTS.md are deliberately EXCLUDED from the rules above and
+# stay tracked. They are operating instructions for the agent, not
+# documentation — a session that starts without them has no rules at all, which
+# is how several of this week's mistakes became possible. They must travel with
+# the code.
+#
+# The trade is that they are public. Keep them free of credentials, personal
+# data and customer information; both files were scanned before being restored.
+!/CLAUDE.md
+!/AGENTS.md
