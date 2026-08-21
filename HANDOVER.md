@@ -85,6 +85,27 @@ list — paste addresses (one per line) to bulk-import your existing list of
 about seventy, and there's a matching **Export CSV** link for pulling the
 list out again later.
 
+## What you get emailed, and when
+
+Two different kinds of message arrive, and they follow deliberately different
+rules. Nothing here is something you configure — it is how the site behaves.
+
+**A sale — "Order #N paid".** Only ever sent once Stripe has confirmed the
+money. If someone fills the cart, goes to the payment page and then closes the
+tab, or their card fails, **you hear nothing at all**. That order is still
+recorded and shows in your CSV export for pipeline and accounting, but it will
+never land in your inbox looking like something to bake. You should never get a
+message that reads like an order for money that has not arrived.
+
+**A lead — "Wholesale enquiry #N", "Arrangement request #N", "Waitlist order #N
+— nothing charged".** Sent the moment someone submits the form. These never
+involve a payment, so there is nothing to wait for. **They always arrive**, and
+they are worded so they cannot be mistaken for a sale. These are what feed Zoho,
+so none of them should ever go quiet.
+
+If you ever stop receiving wholesale or arrangement enquiries, that is a fault —
+tell your developer. It is not the paid-only rule working as intended.
+
 ---
 
 **A note on the ingredient lists on the kitchen record page:** the admin

@@ -134,3 +134,11 @@ Create a Zap with a **Webhooks by Zapier → Catch Hook** trigger, copy the
 URL it generates into `ZAPIER_WEBHOOK_URL`, and redeploy. The order payload
 format is documented in `SETUP.md`. Until then the empty value is skipped
 silently and nothing else changes.
+
+The hook receives two different kinds of event, and they are not gated the same
+way. **Sales** (`event: "order.paid"`) arrive only once Stripe has confirmed
+payment — an abandoned or failed checkout sends nothing at all. **Leads**
+(`event: "order.created"` — wholesale enquiries, arrangement requests, waitlist
+signups) arrive at submission, because they never involve a payment to wait for.
+Build the Zap so a lead is not actioned as though it were a sale, and do not
+filter leads out: capturing every one of them is the point.

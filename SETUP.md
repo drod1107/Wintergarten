@@ -92,13 +92,20 @@ has ordinary outbound internet access.
 | `STRIPE_SECRET_KEY` | Checkout | Test or live, from the Stripe dashboard |
 | `STRIPE_PUBLISHABLE_KEY` | Checkout | Currently unused server-side but reserved for a future client Elements upgrade |
 | `STRIPE_WEBHOOK_SECRET` | Checkout reliability | Optional |
-| `ZAPIER_WEBHOOK_URL` | Order notifications | Optional; empty is skipped silently |
+| `ZAPIER_WEBHOOK_URL` | Sale and lead notifications | Optional; empty is reported as `skipped` |
 | `NEXT_PUBLIC_SITE_URL` | Metadata, Stripe redirect URLs | Set to your real domain in production |
 
 ## 4. Zapier notifications (optional)
 
-After Stripe confirms a payment, the webhook handler POSTs the order to
-`ZAPIER_WEBHOOK_URL` as JSON. Leave the variable empty and nothing is sent —
+Two different things POST to `ZAPIER_WEBHOOK_URL`, on two different triggers:
+
+- **A sale** — only after Stripe confirms payment, from the webhook handler. An
+  unpaid, abandoned or failed checkout sends nothing.
+- **A lead** — a wholesale enquiry, arrangement request or waitlist signup, at
+  the moment it is submitted. These never touch Stripe, so they are not gated on
+  payment and always fire.
+
+Leave the variable empty and nothing is sent —
 the check is `lib/zapier.ts`, and a missing or blank URL is skipped silently,
 so this can be wired up later without touching code.
 

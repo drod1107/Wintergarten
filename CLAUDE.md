@@ -20,6 +20,56 @@ You do not make decisions. You present options and the owner chooses.
 - Do not end a response with a permission-seeking hedge about work already
   authorised. Ask genuine blocking questions at the start, in one sentence.
 
+## Documentation is never stale (non-negotiable)
+
+**If a change alters a fact stated in the documentation, updating that
+documentation is part of the same PR diff. Always.** Not a follow-up, not a
+separate PR, not a TODO, not "I'll do it after this merges."
+
+A PR that changes behaviour, configuration, environment scoping, or any
+documented invariant and does **not** update the affected docs in the same diff
+is **incomplete**. Treat it exactly as you would treat a PR that doesn't
+compile: it is not ready, and it does not go up.
+
+Before you open any PR, ask what the diff makes untrue, and check at minimum:
+
+- `MASTER-PLAN.md` — architecture, order fanout, bug queue, environment
+- `CLAUDE.md` and `AGENTS.md` — operating rules and invariants
+- `HANDOVER.md` — anything the owner does himself, or receives
+- `SETUP.md` / `DEPLOY.md` — env vars, third-party dashboard configuration
+- `docs/` — the topic-specific guides
+
+If a doc says a thing works one way and your change makes it work another way,
+you fix the doc. If your change makes a documented manual step unnecessary, you
+delete the step. If it adds one, you write it down.
+
+The reason this is a rule and not a preference: a PR whose entire purpose is
+"bring the docs back up to current state" should never need to exist. When one
+does, it means several earlier PRs each shipped a small lie, and someone acted
+on one of them.
+
+## Notifications: sales vs leads (settled — do not re-litigate)
+
+Two rules that look like one. Conflating them has already caused one production
+defect and one near-miss in the other direction. Full detail in issue #22 and
+the "Order fanout" section of `MASTER-PLAN.md`.
+
+- **A sale notification fires only when Stripe confirms payment.** Unpaid,
+  abandoned, expired, failed and pending-payment checkouts are recorded for
+  pipeline tracking and accounting and announce **nothing**. Nothing may reach
+  the owner reading as an order when no money has moved.
+- **Lead notifications are not sales and must never be silenced.** Wholesale
+  enquiries, arrangement requests and waitlist signups notify at creation,
+  always, independent of payment. They exist to feed Zoho so no inbound lead is
+  missed. Silencing one is a regression, not a fix.
+
+If you are "tidying up" `lib/notify.ts` and about to make the second group
+conditional on payment, stop. That is the mistake this section exists to prevent.
+
+`app/api/stripe/webhook/route.ts` gates on `payment_status === 'paid'`. Do not
+remove that check to simplify the handler — `checkout.session.completed` fires
+unpaid for ACH, bank transfer and Klarna.
+
 ## Git workflow (non-negotiable)
 
 - All work happens on a feature branch cut from `dev`, named `claude/…`.

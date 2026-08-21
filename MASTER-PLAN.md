@@ -32,10 +32,91 @@ _A fresh Claude instance should be able to read this file and execute without an
 - `app/care-guides/` — growing notes index and slug pages
 - `scripts/sync-products.ts` — full upsert of all products from seed-data to DB (safe to re-run; use with DB connection string)
 
-### Order fanout (on paid Stripe checkout.session.completed)
-1. `lib/zapier.ts` → `notifyZapier()` — fires if `ZAPIER_WEBHOOK_URL` env var is set (currently empty)
-2. `lib/notify-email.ts` → `notifyOwnerByEmail()` — fires if `RESEND_API_KEY` + `ORDER_NOTIFY_EMAIL` are set (confirmed set)
-3. `lib/zoho.ts` → `recordOrderInZoho()` — fires if `ZOHO_CLIENT_ID/SECRET/REFRESH_TOKEN` are set (set but unconfirmed working)
+### Environment scoping — verified 2026-08-21
+
+Checked with `vercel env ls`, which shows names and scopes only.
+
+| Variable | `Preview (dev)` override | Environment-wide |
+|---|---|---|
+| `DATABASE_URL` | yes — separate test database | `Production, Preview` |
+| `STRIPE_SECRET_KEY` | yes — **test** key | `Production, Preview` |
+| `STRIPE_PUBLISHABLE_KEY` | yes | `Production, Preview` |
+| `STRIPE_WEBHOOK_SECRET` | yes — test endpoint | `Production, Preview` |
+
+**Isolation applies to the `dev` branch only.** A deployment built from `dev`
+gets the test database and test Stripe keys — confirmed by a `cs_test_` session
+id and a "Sandbox" badge at Checkout. **Every other preview branch falls through
+to the `Production, Preview` values and therefore reads the production database
+with the production Stripe key.** A checkout on a feature-branch preview is a
+real charge against real data. Treat any branch preview that is not `dev` as
+production.
+
+The intent is to make this Preview-wide. It has **not** landed: Vercel rejects a
+second Preview-scoped variable of the same name (`An Environment Variable with
+the name 'DATABASE_URL' and target 'preview' already exists`), so the
+environment-wide entry has to be narrowed to Production first, and these are
+**Sensitive** variables whose values cannot be read back — the edit form's value
+box is empty and "Copy to Clipboard" is disabled. Re-scoping therefore needs the
+owner, who holds the values.
+
+Notification credentials (`RESEND_API_KEY`, `ORDER_NOTIFY_EMAIL`, `ZOHO_*`,
+`ZAPIER_WEBHOOK_URL`) are **not** branch-scoped. Preview sends real email to the
+real inbox and writes real Zoho records, even when its payments are test-mode.
+That is why a test order produces a genuine-looking notification.
+
+**Stripe webhook endpoints** (dashboard state; nothing in this repo configures
+them):
+
+| Mode | Name | URL | Events |
+|---|---|---|---|
+| Live | `wintergarten-production` | `derwintergarten.com/api/stripe/webhook` | `checkout.session.completed`, `checkout.session.async_payment_succeeded` |
+| Test | `wintergarten-dev-preview` | `wintergarten-git-dev-windrose.vercel.app/api/stripe/webhook` | same two |
+
+The test endpoint is bound to the **`dev` preview URL specifically**. Stripe
+cannot fan out to arbitrary per-branch preview URLs, so webhook-dependent
+testing only works on `dev` even once the keys are Preview-wide.
+
+### Order fanout — sales vs leads
+
+**Read this distinction before changing anything in `lib/notify.ts`. Getting it
+wrong in either direction has burned this project once already.**
+
+There are two kinds of notification and they follow opposite rules:
+
+| | Fires when | Paths |
+|---|---|---|
+| **Sale** — "you have been paid" | **Only when Stripe confirms payment.** Never before. | Card order, on `checkout.session.completed` / `checkout.session.async_payment_succeeded` with `payment_status === 'paid'` |
+| **Lead** — "someone wants something" | **At creation, always. Independent of payment.** | Wholesale enquiry, arrangement request, waitlist signup |
+
+**Sales.** An unpaid, abandoned, expired, failed or pending-payment checkout is
+written to the database for pipeline tracking and accounting and **notifies
+nothing**. Anything that reads as an "order" when no money has moved creates a
+false obligation to bake and an argument with a customer who never paid. The
+only place a sale is ever announced is `app/api/stripe/webhook/route.ts`, behind
+`payment_status === 'paid'`.
+
+**Leads.** Wholesale enquiries, arrangement requests and waitlist signups never
+touch Stripe, so there is no payment to wait for. They notify at creation and
+**must never be silenced** — burying them defeats the entire point of the Zoho
+CRM/Books setup, which exists to capture every inbound lead so none is missed.
+They label themselves as enquiries rather than sales (`lib/notify-email.ts`
+`headline()`), so they cannot be mistaken for money received.
+
+If any of the three lead paths goes quiet, that is a regression, not a fix.
+
+`lib/notify.ts` → `notifyNewOrder()` is the single entry point for both. It
+refuses to fan out a payable order that Stripe has not confirmed, and fans out to
+three channels concurrently:
+
+1. `lib/zapier.ts` → `notifyZapier()` — needs `ZAPIER_WEBHOOK_URL`
+2. `lib/notify-email.ts` → `notifyOwnerByEmail()` — needs `RESEND_API_KEY` + `ORDER_NOTIFY_EMAIL`
+3. `lib/zoho.ts` → `recordOrderInZoho()` — needs `ZOHO_CLIENT_ID/SECRET/REFRESH_TOKEN`
+
+Outcomes are logged as `[notify] order N (kind/branch) zapier=… email=… zoho=…`
+in the Vercel runtime logs. `orders.notified_at` is claimed before sending so a
+redelivered webhook sends nothing, and released if nothing was delivered.
+
+Full rule and the settled scope: issue #22.
 
 ---
 
