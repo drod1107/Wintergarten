@@ -3,18 +3,20 @@ import { getStripe } from '@/lib/stripe';
 import { markOrderPaid } from '@/lib/store';
 import { notifyNewOrder } from '@/lib/notify';
 
-// Every order notifies exactly once, at the moment its own path terminates.
+// This file is the ONLY place a payable order is ever announced.
 //
-// For a card order that moment is confirmed payment, which is here: the tax is
-// settled by now, so the owner is told what was actually collected, and a cart
-// abandoned at Checkout correctly notifies nothing at all.
+// The rule: no notification of any kind — email, Zap, Zoho, anything — unless
+// Stripe has confirmed the money. Abandoned, expired, failed and pending-payment
+// checkouts keep their database row for pipeline tracking and accounting, and
+// send nothing. An "order" in the owner's inbox when no money has moved creates
+// a false obligation to bake and an argument with a customer who never paid.
 //
-// The paths that never reach Stripe — wholesale and arrangement enquiries,
-// waitlist orders, a Stripe-less environment, and a failed session creation —
-// terminate at order creation and notify there instead, in
-// app/api/orders/route.ts. That is the bug this arrangement fixes: those four
-// used to write a row and then go silent, because the fanouts only ever ran in
-// the branch below.
+// Confirmed payment is also the right moment on its own merits: the tax is
+// settled by then, so the figure the owner sees is what was actually collected.
+//
+// The non-payable enquiry paths — wholesale, arrangement, waitlist — never reach
+// Stripe and notify at creation in app/api/orders/route.ts, labelled as enquiries
+// rather than sales. Whether they should notify at all is open; see issue #22.
 //
 // Double-firing is prevented in the database rather than here: notifyNewOrder
 // claims the order's notified_at before sending, so a Stripe redelivery of the
@@ -38,7 +40,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Webhook signature verification failed: ${err.message}` }, { status: 400 });
   }
 
-  if (event.type === 'checkout.session.completed') {
+  // The only two events that may ever produce a notification.
+  //
+  // `checkout.session.completed` alone is NOT proof of payment: for delayed
+  // payment methods — ACH bank debit, Klarna, bank transfer, all of which this
+  // account currently offers at Checkout — it fires immediately with
+  // `payment_status: 'unpaid'` and the money lands minutes or days later. That
+  // is why the `=== 'paid'` check below exists and must never be removed.
+  //
+  // `checkout.session.async_payment_succeeded` is the event that fires when a
+  // delayed payment finally clears. Without it, an ACH or Klarna order that is
+  // genuinely paid notifies nobody, ever — the mirror-image failure of the one
+  // this file is being changed to fix, and the worse of the two.
+  //
+  // Everything else is deliberately unhandled and returns 200 without sending:
+  // checkout.session.expired (abandoned cart), checkout.session.async_payment_failed,
+  // payment_intent.payment_failed, payment_intent.canceled, charge.failed. Those
+  // orders keep their row for pipeline tracking and accounting and notify nothing.
+  if (
+    event.type === 'checkout.session.completed' ||
+    event.type === 'checkout.session.async_payment_succeeded'
+  ) {
     const session = event.data.object as {
       id: string;
       payment_status: string;
@@ -67,6 +89,16 @@ export async function POST(req: NextRequest) {
           `[stripe] paid session ${session.id} matched no order row — payment received with nothing to fulfil.`
         );
       }
+    } else {
+      // The trap this whole change exists around: `checkout.session.completed`
+      // with payment_status 'unpaid' (delayed method still clearing) or
+      // 'no_payment_required' (fully discounted). Recorded, never announced.
+      // If it is a delayed method that later clears, async_payment_succeeded
+      // brings it back here with payment_status 'paid' and it notifies then.
+      console.log(
+        `[stripe] session ${session.id} ${event.type} with payment_status=${session.payment_status} ` +
+          '— not paid, recorded only, no notification sent'
+      );
     }
   }
 
