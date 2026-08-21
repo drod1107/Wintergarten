@@ -60,7 +60,19 @@ no code changes; nothing in the code path is test-mode specific.
 Stripe → **Developers** → **Webhooks** → **Add endpoint**.
 
 - Endpoint URL: `https://derwintergarten.com/api/stripe/webhook`
-- Events to send: **`checkout.session.completed`** (this one only)
+- Events to send: **`checkout.session.completed`** and
+  **`checkout.session.async_payment_succeeded`** — these two, nothing else.
+
+> `checkout.session.completed` is **not** proof of payment. For delayed payment
+> methods (ACH bank debit, Klarna, bank transfer) it fires straight away with
+> `payment_status: 'unpaid'` and the money clears later, so the application
+> notifies only when `payment_status === 'paid'`.
+> `checkout.session.async_payment_succeeded` is what fires when a delayed
+> payment finally clears — without it those genuinely paid orders would notify
+> nobody. Do not subscribe to `checkout.session.expired`,
+> `checkout.session.async_payment_failed` or any `payment_intent.*` failure
+> event: unpaid attempts are recorded for pipeline tracking and accounting and
+> must never produce a notification.
 
 Stripe then shows a **Signing secret** (`whsec_…`). Put it in
 `STRIPE_WEBHOOK_SECRET`.
