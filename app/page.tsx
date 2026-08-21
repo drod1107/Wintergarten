@@ -126,7 +126,7 @@ export default async function HomePage() {
               <dl>
                 <div>
                   <dt>Gluten</dt>
-                  <dd>Never on the premises</dd>
+                  <dd>All contamination risks are certified gluten-free</dd>
                 </div>
                 <div>
                   <dt>Mammal</dt>
