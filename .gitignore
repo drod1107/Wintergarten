@@ -8,3 +8,21 @@ node_modules
 tsconfig.tsbuildinfo
 
 .env*.local
+
+# Customer data exports and database dumps — never commit these.
+#
+# The orders table holds names, email addresses, phone numbers and street
+# addresses. This repo is public. A dump of it sitting untracked in the working
+# tree is one `git add -A` away from being published, so the patterns below
+# refuse the whole shape rather than any one filename.
+#
+# If you need a dump, write it outside the repo.
+orders-backup-*.json
+*-backup-*.json
+orders-export*.csv
+orders*.csv
+customers*.csv
+subscribers*.csv
+email-list*.csv
+*.dump
+*.sql.gz
