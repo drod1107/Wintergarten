@@ -122,3 +122,16 @@ export type OrderRecord = {
   stripeSessionId: string | null;
   stripeStatus: string;
 };
+
+// Outbound notification channels report back rather than swallowing failures.
+// 'skipped' means the integration is deliberately not configured, which is a
+// normal state here and must not be logged as an error; 'failed' means it was
+// configured, was tried, and did not work — that is the case that used to look
+// identical to success.
+export type NotifyChannel = 'zapier' | 'email' | 'zoho';
+
+export type NotifyResult = {
+  channel: NotifyChannel;
+  status: 'ok' | 'skipped' | 'failed';
+  detail?: string;
+};

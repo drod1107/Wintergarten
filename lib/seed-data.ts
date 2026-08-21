@@ -199,7 +199,7 @@ export const SEED_PRODUCTS: Product[] = [
       { label: 'Sold as', value: 'By order only' },
     ],
     priceCents: 4500,
-    priceNote: 'to $72, depending on size and flavor',
+    priceNote: 'to $150+, depending on size and flavor',
     pricePending: false,
     ships: false,
     capacity: 4,
