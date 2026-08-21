@@ -12,17 +12,17 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Kitchen Record',
   description:
-    "What's never in this building â€” gluten, mammal-derived ingredients, artificial colour and flavour â€” plus every ingredient, allergen and cross-contact detail, ingredient by ingredient. Missouri cottage food law RSMo 196.298.",
+    "What's never in this building — gluten, mammal-derived ingredients, artificial colour and flavour — plus every ingredient, allergen and cross-contact detail, ingredient by ingredient. Missouri cottage food law RSMo 196.298.",
   alternates: { canonical: `${SITE_URL}/kitchen-record` },
   openGraph: {
-    title: `${SITE_NAME} â€” Kitchen Record`,
+    title: `${SITE_NAME} — Kitchen Record`,
     description: "What's never in this building, and the full ingredient list for every product.",
     url: `${SITE_URL}/kitchen-record`,
     type: 'article',
   },
   twitter: {
     card: 'summary',
-    title: `${SITE_NAME} â€” Kitchen Record`,
+    title: `${SITE_NAME} — Kitchen Record`,
     description: "What's never in this building, and the full ingredient list for every product.",
   },
 };
@@ -37,7 +37,14 @@ function PlaceholderFlag({ text }: { text: string }) {
 }
 
 export default async function KitchenRecordPage() {
-  const [record, products] = await Promise.all([getKitchenRecord(), getProducts({ includeInactive: true })]);
+  const [record, allProducts] = await Promise.all([
+    getKitchenRecord(),
+    getProducts({ includeInactive: true }),
+  ]);
+  // This section is the food allergen record kept under Missouri cottage food
+  // law. Houseplants have no ingredient list, so listing them here only ever
+  // produced a placeholder asking the owner for one that cannot exist.
+  const products = allProducts.filter((p) => p.type !== 'plant');
 
   return (
     <>
@@ -141,7 +148,7 @@ export default async function KitchenRecordPage() {
 
           <p className="no-print" style={{ marginBottom: 60 }}>
             <Link href="/order" className="btn btn-outline">
-              Ready to order â†’
+              Ready to order →
             </Link>
           </p>
         </div>

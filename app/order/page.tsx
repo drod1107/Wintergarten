@@ -33,9 +33,9 @@ export default async function OrderPage() {
             <p className="dek">
               {windowState.state === 'open' && 'This window is open. Add what you want below.'}
               {windowState.state === 'closed' &&
-                'This window is closed right now — wholesale and café enquiries still go through below.'}
+                'This window is closed right now — by-arrangement bookings, wholesale and café enquiries still go through below.'}
               {windowState.state === 'sold-out' &&
-                "This window has sold out — wholesale enquiries still go through below, and we'll open again next week."}
+                "This window has sold out — by-arrangement bookings and wholesale enquiries still go through below, and we'll open again next week."}
             </p>
           </header>
 

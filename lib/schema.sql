@@ -37,7 +37,7 @@ create table if not exists order_window (
 create table if not exists orders (
   id serial primary key,
   created_at timestamptz not null default now(),
-  kind text not null check (kind in ('order', 'wholesale')),
+  kind text not null check (kind in ('order', 'wholesale', 'arrangement')),
   branch text not null check (branch in ('pickup', 'shipping', 'waitlist', 'n/a')),
   name text not null,
   email text not null,
@@ -146,3 +146,11 @@ alter table products add column if not exists list_on_home boolean not null defa
 -- tax_cents records what Stripe actually collected so the order row reconciles
 -- against the charge. charge_cents is updated at webhook time to the real total.
 alter table orders add column if not exists tax_cents integer not null default 0;
+
+-- By-arrangement requests (2026-08-21)
+-- Reservat items (Der Smoking, occasion cakes) are booked by conversation, not
+-- bought from the cart. They arrive as their own order kind so they are not
+-- filed as wholesale and are not gated by the bake window.
+alter table orders drop constraint if exists orders_kind_check;
+alter table orders add constraint orders_kind_check
+  check (kind in ('order', 'wholesale', 'arrangement'));
