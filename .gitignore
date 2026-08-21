@@ -1,22 +1,80 @@
+# This repository is PUBLIC and the application handles customer PII and
+# payment credentials. These rules are deliberately broad: the cost of an
+# over-broad rule is one `git add -f`, the cost of a gap is a disclosure.
+#
+# Before adding an exception, ask what it would look like on the public
+# internet.
+
+# ---------------------------------------------------------------- toolchain
 node_modules
 .next
-.env
-.env.local
+out
+build
+dist
 .vercel
-*.log
-.DS_Store
+.turbo
+*.tsbuildinfo
 tsconfig.tsbuildinfo
+coverage
+.nyc_output
+.cache
 
-.env*.local
+# ------------------------------------------------------------- environment
+# Every .env variant, then the one file that is meant to be committed is
+# re-admitted explicitly. `.env.example` must never contain a real value.
+.env
+.env.*
+!.env.example
 
-# Customer data exports and database dumps — never commit these.
-#
+# Derivatives of an env file. `.env.local.bak` was created by an agent on
+# 2026-08-21 and was NOT matched by the previous `.env*.local` rule, which is
+# why these are enumerated rather than assumed.
+*.bak
+*.backup
+*.orig
+*.rej
+*.tmp
+*.temp
+*.old
+*.save
+*~
+.env*.bak
+.env*.backup
+.env*.orig
+.env*.tmp
+.env*.old
+.env*.save
+
+# -------------------------------------------------- credentials and keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+*.der
+*.asc
+*.gpg
+*.ppk
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+.npmrc
+.netrc
+credentials
+credentials.json
+service-account*.json
+gha-creds-*.json
+secrets.json
+secrets.yaml
+secrets.yml
+
+# --------------------------------------- customer data, dumps and exports
 # The orders table holds names, email addresses, phone numbers and street
-# addresses. This repo is public. A dump of it sitting untracked in the working
-# tree is one `git add -A` away from being published, so the patterns below
-# refuse the whole shape rather than any one filename.
-#
-# If you need a dump, write it outside the repo.
+# addresses. If you need a dump, write it OUTSIDE the repository.
 orders-backup-*.json
 *-backup-*.json
 orders-export*.csv
@@ -26,8 +84,37 @@ subscribers*.csv
 email-list*.csv
 *.dump
 *.sql.gz
+*.sql.zip
+dump.rdb
+db-snapshot*
+pg_dump*
 
-# Per-session agent scratch. Not project documentation — it goes stale the
-# moment a session ends, and MASTER-PLAN.md is the source of truth instead.
-# Scanned 2026-08-21: no secrets, no customer data.
+# ------------------------------------------------------- editor / OS cruft
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*.sublime-workspace
+
+# ----------------------------------------------------------------- logging
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --------------------------------------------------- per-session agent scratch
+# Not project documentation. It goes stale the moment a session ends, and one
+# of its files still described pre-#18 webhook behaviour — exactly the second
+# source of truth that caused this week's confusion. MASTER-PLAN.md is the
+# source of truth. Scanned 2026-08-21: no secrets, no customer data.
 .handoff/
