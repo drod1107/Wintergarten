@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-import { fontDisplay, fontBody, fontMono, fontSerif } from './fonts';
+import { fontDisplay, fontBody, fontMono } from './fonts';
 import { isDemoMode, getStandStatus } from '@/lib/store';
 import { SITE_NAME, SITE_TAGLINE, SITE_URL, BUSINESS_ADDRESS } from '@/lib/site';
 import DemoBanner from '@/components/DemoBanner';
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#E6E9DF',
+  themeColor: '#E8E7E1',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -47,7 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable} ${fontSerif.variable}`}
+      className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`}
     >
       <body>
         <a href="#main" className="skip-link">
