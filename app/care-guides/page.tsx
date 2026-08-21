@@ -10,9 +10,9 @@ import { SITE_URL } from '@/lib/site';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Growing Notes â€” Houseplant Care Guides',
+  title: 'Growing Notes — Houseplant Care Guides',
   description:
-    'Care guides for pothos, philodendron, ZZ plant, monstera, spider plant and aloe â€” plus propagation and taking cuttings. Written to be useful whether or not you ever buy anything.',
+    'Care guides for pothos, philodendron, ZZ plant, monstera, spider plant and aloe — plus propagation and taking cuttings. Written to be useful whether or not you ever buy anything.',
   alternates: { canonical: `${SITE_URL}/care-guides` },
 };
 

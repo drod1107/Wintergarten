@@ -103,7 +103,7 @@ export type OrderBranch = 'pickup' | 'shipping' | 'waitlist' | 'n/a';
 export type OrderRecord = {
   id: number;
   createdAt: string;
-  kind: 'order' | 'wholesale';
+  kind: 'order' | 'wholesale' | 'arrangement';
   branch: OrderBranch;
   name: string;
   email: string;
