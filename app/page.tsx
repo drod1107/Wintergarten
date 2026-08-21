@@ -52,10 +52,10 @@ export default async function HomePage() {
             <h1 className="visually-hidden">Wintergarten Bakehouse + Botanicals</h1>
             <div className="hero-logo" aria-hidden="true">
               <Image
-                src="/images/logo.jpg"
+                src="/images/logo.png"
                 alt=""
-                width={900}
-                height={320}
+                width={1744}
+                height={902}
                 priority
                 style={{ width: '100%', height: 'auto', display: 'block' }}
               />
