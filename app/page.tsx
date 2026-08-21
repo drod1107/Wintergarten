@@ -134,11 +134,11 @@ export default async function HomePage() {
                 </div>
                 <div>
                   <dt>Artificial</dt>
-                  <dd>No colour, no flavour</dd>
+                  <dd>Only natural flavors and colorings</dd>
                 </div>
                 <div>
                   <dt>Eggs</dt>
-                  <dd>Real, and the reason any of this works</dd>
+                  <dd>Real, typically local and ethically sourced</dd>
                 </div>
               </dl>
               <Link className="link" href="/kitchen-record">
