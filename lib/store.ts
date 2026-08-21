@@ -469,12 +469,15 @@ export type NewOrder = {
 
 let demoOrderId = 1;
 
-export async function createOrder(o: NewOrder): Promise<{ id: number }> {
+// Returns the full inserted row alongside the id, so callers can fan the order
+// out to Zapier/email/Zoho without a second round trip. `order` is null in demo
+// mode (no DATABASE_URL), where there is no row to return.
+export async function createOrder(o: NewOrder): Promise<{ id: number; order: OrderRecord | null }> {
   const pool = getPool();
-  if (!pool) return { id: demoOrderId++ };
+  if (!pool) return { id: demoOrderId++, order: null };
   const { rows } = await pool.query(
     `insert into orders (kind, branch, name, email, phone, address, distance_miles, reference_point, pickup_day, items, subtotal_cents, charge_cents, wholesale_business, wholesale_qty, notes)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) returning id`,
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) returning *`,
     [
       o.kind,
       o.branch,
@@ -493,15 +496,16 @@ export async function createOrder(o: NewOrder): Promise<{ id: number }> {
       o.notes,
     ]
   );
+  const created = rowToOrder(rows[0]);
   // Reserve capacity immediately so concurrent orders can't oversell a batch.
-  if (o.reserveCapacity === false) return { id: rows[0].id };
+  if (o.reserveCapacity === false) return { id: created.id, order: created };
   for (const item of o.items) {
     await pool.query('update products set ordered_count = ordered_count + $1 where id = $2', [
       item.qty,
       item.id,
     ]);
   }
-  return { id: rows[0].id };
+  return { id: created.id, order: created };
 }
 
 export async function setOrderStripeSession(id: number, sessionId: string): Promise<void> {
@@ -538,6 +542,41 @@ export async function markOrderPaid(
     [sessionId, amounts?.amountTotalCents ?? null, amounts?.taxCents ?? null]
   );
   return rows[0] ? rowToOrder(rows[0]) : null;
+}
+
+/**
+ * Claim the right to notify about an order, exactly once.
+ *
+ * Returns true if this caller won the claim and should send, false if the order
+ * has already been notified. The guard has to live in the database rather than
+ * in the webhook, because `stripe_status` is not a usable idempotency key here:
+ * app/order/confirmation/page.tsx also calls markOrderPaid when the customer
+ * lands on it, so by the time Stripe's webhook arrives the row may already read
+ * 'paid'. Gating on that would silently skip the notification instead of
+ * deduplicating it.
+ *
+ * Fails open. If the claim cannot be made — most likely because `notified_at`
+ * has not been added yet by re-running lib/schema.sql — we notify anyway and say
+ * so in the log. Sending twice in that window is the pre-existing behaviour and
+ * is far better than an order that goes silent.
+ */
+export async function claimOrderNotification(orderId: number): Promise<boolean> {
+  const pool = getPool();
+  if (!pool) return true; // demo mode: nothing is persisted, so nothing to dedupe
+  try {
+    const { rows } = await pool.query(
+      'update orders set notified_at = now() where id = $1 and notified_at is null returning id',
+      [orderId]
+    );
+    return rows.length > 0;
+  } catch (err) {
+    console.error(
+      `[notify] could not claim notification for order ${orderId} — sending without a duplicate guard. ` +
+        'Re-run lib/schema.sql to add orders.notified_at. Cause:',
+      err
+    );
+    return true;
+  }
 }
 
 export async function getOrders(): Promise<OrderRecord[]> {

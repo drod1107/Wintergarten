@@ -1,4 +1,4 @@
-import type { OrderRecord } from './types';
+import type { NotifyResult, OrderRecord } from './types';
 
 // Zoho Books fanout, mirroring lib/zapier.ts: configuration is optional, and
 // the site behaves identically whether or not the env vars are set. Wiring
@@ -60,6 +60,21 @@ async function zohoFetch(token: string, path: string, init?: RequestInit) {
   });
 }
 
+// Every invoice this code creates carries reference_number WEB-<orderId>, which
+// makes that field the natural idempotency key. Without this check a replayed
+// Stripe webhook — or a retried order submission — creates a second invoice for
+// the same order, and Zoho will happily accept it.
+async function findInvoiceByReference(token: string, reference: string): Promise<string | null> {
+  const res = await zohoFetch(token, `/invoices?reference_number=${encodeURIComponent(reference)}`);
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => null);
+  const hit = data?.invoices?.find(
+    (inv: { reference_number?: string; invoice_id?: string }) =>
+      inv.reference_number === reference
+  );
+  return hit?.invoice_id ?? null;
+}
+
 async function findOrCreateContact(token: string, order: OrderRecord): Promise<string | null> {
   // Search by email first so repeat customers accumulate history.
   if (order.email) {
@@ -88,34 +103,74 @@ async function findOrCreateContact(token: string, order: OrderRecord): Promise<s
     const data = await retry.json();
     if (data.contacts?.length) return data.contacts[0].contact_id;
   }
-  console.error(`[zoho] could not find or create contact for order ${order.id}`);
   return null;
 }
 
-// Never throws and never blocks the caller: Zoho being down must not cause
-// Stripe's webhook to fail and redeliver a settled payment.
-export async function recordOrderInZoho(order: OrderRecord): Promise<void> {
-  if (!isZohoConfigured()) return;
+// Never throws, so Zoho being down cannot take down an order submission — but
+// it now reports the outcome rather than swallowing it.
+//
+// Two things worth knowing about what this does and does not invoice:
+//
+//   * Wholesale and arrangement enquiries carry no priced line items, and a
+//     waitlist order is explicitly not a sale. Zoho rejects an invoice with an
+//     empty line_items array, so for those the contact is still recorded — which
+//     is the part with CRM value — and the invoice is skipped, reported as such.
+//   * An invoice raised at order-creation time is pre-tax, because Stripe Tax
+//     does not calculate until checkout. The invoice total will therefore be the
+//     subtotal, not what the customer eventually paid.
+export async function recordOrderInZoho(order: OrderRecord): Promise<NotifyResult> {
+  if (!isZohoConfigured()) {
+    return { channel: 'zoho', status: 'skipped', detail: 'Zoho env vars not set' };
+  }
   try {
     const token = await getAccessToken();
-    if (!token) return;
+    if (!token) {
+      return { channel: 'zoho', status: 'failed', detail: 'token refresh failed' };
+    }
 
     const contactId = await findOrCreateContact(token, order);
-    if (!contactId) return;
+    if (!contactId) {
+      return {
+        channel: 'zoho',
+        status: 'failed',
+        detail: `could not find or create contact for order ${order.id}`,
+      };
+    }
+
+    const billable = order.items.filter((i) => i.priceCents > 0 && i.qty > 0);
+    if (billable.length === 0 || order.chargeCents === 0) {
+      return {
+        channel: 'zoho',
+        status: 'skipped',
+        detail: `contact recorded; no invoice raised (${order.kind}/${order.branch} has nothing billable)`,
+      };
+    }
+
+    const reference = `WEB-${order.id}`;
+    const existing = await findInvoiceByReference(token, reference);
+    if (existing) {
+      return {
+        channel: 'zoho',
+        status: 'skipped',
+        detail: `invoice ${reference} already exists (${existing}) — not duplicated`,
+      };
+    }
 
     const res = await zohoFetch(token, '/invoices', {
       method: 'POST',
       body: JSON.stringify({
         customer_id: contactId,
-        reference_number: `WEB-${order.id}`,
+        reference_number: reference,
         notes: [
-          `Online order #${order.id} — paid via Stripe.`,
+          `Online order #${order.id} — ${
+            order.stripeStatus === 'paid' ? 'paid via Stripe' : 'placed on the website; payment not yet confirmed'
+          }.`,
           `Branch: ${order.branch}. Pickup/due: ${order.pickupDay || 'n/a'}.`,
           order.address ? `Address: ${order.address}` : '',
         ]
           .filter(Boolean)
           .join('\n'),
-        line_items: order.items.map((i) => ({
+        line_items: billable.map((i) => ({
           name: i.name,
           description: i.name,
           rate: i.priceCents / 100,
@@ -125,10 +180,19 @@ export async function recordOrderInZoho(order: OrderRecord): Promise<void> {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      console.error(`[zoho] invoice create failed for order ${order.id}: ${res.status} ${body.slice(0, 300)}`);
+      return {
+        channel: 'zoho',
+        status: 'failed',
+        detail: `invoice create returned HTTP ${res.status}: ${body.slice(0, 200)}`,
+      };
     }
+    return { channel: 'zoho', status: 'ok', detail: `invoice ${reference} created` };
   } catch (err) {
-    console.error(`[zoho] fanout failed for order ${order.id}:`, err);
+    return {
+      channel: 'zoho',
+      status: 'failed',
+      detail: err instanceof Error ? err.message : String(err),
+    };
   }
 }
 

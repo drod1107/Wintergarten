@@ -1,4 +1,4 @@
-import type { OrderRecord } from './types';
+import type { NotifyResult, OrderRecord } from './types';
 
 // Outbound notification hook. ZAPIER_WEBHOOK_URL is deliberately allowed to
 // be unset or empty — that is the normal state until the owner creates the
@@ -9,8 +9,18 @@ export function isZapierConfigured(): boolean {
   return Boolean((process.env.ZAPIER_WEBHOOK_URL || '').trim());
 }
 
+// Orders are notified when they are created, which is the only moment every
+// kind of order has in common — wholesale and arrangement enquiries never reach
+// Stripe at all, and waitlist orders are never charged. 'order.paid' is kept
+// for a later payment-confirmation fanout, if one is ever added.
+export type ZapierOrderEvent = 'order.created' | 'order.paid';
+
 export type ZapierOrderPayload = {
-  event: 'order.paid';
+  event: ZapierOrderEvent;
+  // 'order' is a real sale; 'wholesale' and 'arrangement' are enquiries with no
+  // money attached. A Zap that routes these differently needs this field.
+  orderKind: OrderRecord['kind'];
+  branchIsWaitlist: boolean;
   orderId: number;
   timestamp: string;
   customerName: string;
@@ -30,10 +40,15 @@ export type ZapierOrderPayload = {
   currency: 'usd';
 };
 
-export function buildOrderPayload(order: OrderRecord): ZapierOrderPayload {
+export function buildOrderPayload(
+  order: OrderRecord,
+  event: ZapierOrderEvent = 'order.created'
+): ZapierOrderPayload {
   const money = (cents: number) => (cents / 100).toFixed(2);
   return {
-    event: 'order.paid',
+    event,
+    orderKind: order.kind,
+    branchIsWaitlist: order.branch === 'waitlist',
     orderId: order.id,
     timestamp: new Date().toISOString(),
     customerName: order.name,
@@ -51,8 +66,10 @@ export function buildOrderPayload(order: OrderRecord): ZapierOrderPayload {
     // Zapier's simpler actions (a text message, a spreadsheet cell) can't
     // walk an array, so ship a flat summary alongside the structured items.
     itemsSummary: order.items.map((i) => `${i.qty} × ${i.name}`).join(', '),
-    // Broken out so bookkeeping can post the tax line separately — chargeCents
-    // is the taxed total Stripe collected, not the sum of the item prices.
+    // Broken out so bookkeeping can post the tax line separately. NOTE: at
+    // order-creation time tax is not known yet — Stripe Tax calculates it at
+    // checkout — so taxCents is 0 and total equals subtotal on an 'order.created'
+    // payload. markOrderPaid settles the real figures onto the row afterwards.
     subtotal: money(order.subtotalCents),
     subtotalCents: order.subtotalCents,
     tax: money(order.taxCents),
@@ -63,11 +80,12 @@ export function buildOrderPayload(order: OrderRecord): ZapierOrderPayload {
   };
 }
 
-// Never throws and never blocks the caller's own success path: a Zap being
-// down must not cause Stripe's webhook to fail and retry a paid order.
-export async function notifyZapier(payload: ZapierOrderPayload): Promise<void> {
+// Never throws, so one dead integration cannot take down an order submission —
+// but it now *reports* what happened instead of swallowing it. The caller
+// (lib/notify.ts) is responsible for logging the result.
+export async function notifyZapier(payload: ZapierOrderPayload): Promise<NotifyResult> {
   const url = (process.env.ZAPIER_WEBHOOK_URL || '').trim();
-  if (!url) return;
+  if (!url) return { channel: 'zapier', status: 'skipped', detail: 'ZAPIER_WEBHOOK_URL not set' };
 
   try {
     const res = await fetch(url, {
@@ -77,9 +95,14 @@ export async function notifyZapier(payload: ZapierOrderPayload): Promise<void> {
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
-      console.error(`Zapier webhook returned ${res.status} for order ${payload.orderId}.`);
+      return { channel: 'zapier', status: 'failed', detail: `webhook returned HTTP ${res.status}` };
     }
+    return { channel: 'zapier', status: 'ok' };
   } catch (err) {
-    console.error(`Zapier webhook failed for order ${payload.orderId}:`, err);
+    return {
+      channel: 'zapier',
+      status: 'failed',
+      detail: err instanceof Error ? err.message : String(err),
+    };
   }
 }
