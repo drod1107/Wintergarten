@@ -26,3 +26,8 @@ subscribers*.csv
 email-list*.csv
 *.dump
 *.sql.gz
+
+# Per-session agent scratch. Not project documentation — it goes stale the
+# moment a session ends, and MASTER-PLAN.md is the source of truth instead.
+# Scanned 2026-08-21: no secrets, no customer data.
+.handoff/
